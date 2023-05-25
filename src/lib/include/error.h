@@ -4,6 +4,8 @@
 #include "config.h"
 #include "types.h"
 
+#include <stdarg.h>
+
 #define ERROR_SUBSYSTEM_AUTH 			0x1
 #define ERROR_SUBSYSTEM_EST 			0x2
 #define ERROR_SUBSYSTEM_HTTP 			0x3
@@ -32,14 +34,14 @@ typedef struct ESTError {
 
 /* Update the input error structure appending the provided message to the current one.
 If the total len is greater than the max message len the provided message will be truncated. */
-void est_error_update(ESTError_t *err, const char *new_message);
+void est_error_update(ESTError_t *err, const char *new_message, ...);
 
 /* Set all fields of the current input error structure using "errno" variable to set the value
 of the "native" field. */
-void est_error_set(ESTError_t *err, int8_t subsystem, const char *message, int16_t code);
+void est_error_set(ESTError_t *err, int8_t subsystem, int16_t code, const char *message, ...);
 
 /* Set all fields of the current input error structure leaving the "native" field to zero.
 Usually used for business logic error without errno variable value. */
-void est_error_set_custom(ESTError_t *err, int8_t subsystem, const char *message, int16_t code);
+void est_error_set_custom(ESTError_t *err, int8_t subsystem, int16_t code, int native, const char *message, ...);
 
 #endif /* FEC109FF_C954_4E67_B116_0D574A41ABB1 */

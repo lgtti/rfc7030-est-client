@@ -7,9 +7,6 @@
 #include "config.h"
 #include "auth.h"
 
-#define HTTP_GET    0x1
-#define HTTP_POST   0x2
-
 /* Generic header definition name:value */
 typedef struct ESTHttp_Header {
     char name[EST_HTTP_HEADER_NAME_LEN];

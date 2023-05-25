@@ -10,6 +10,9 @@
 #include "tls.h"
 #include "http.h"
 
+
+#define EST_LIB_VERSION  "RFC7030-ESTClient-1.0.0"
+
 /* No http body found in response. */
 #define EST_ERROR_NOBODY                 0x1
 
@@ -19,7 +22,36 @@
 /* Simpleenroll want only one certificate in response. Too many founded. */
 #define EST_ERROR_ENROLL_TOOMANY         0x3
 
+/* Cacerts want only HTTP 200 OK status code. */
+#define EST_ERROR_CACERTS_HTTP_KO        0x4
 
+/* Error used if headers response are not valid. */
+#define EST_ERROR_CACERTS_BADREQUEST     0x5
+
+/* Error used if one cacert certificate is not valid. */
+#define EST_ERROR_CACERTS_INVALID        0x6
+
+/* Error used if server requires retry. Native code is the retry delay. */
+#define EST_ERROR_ENROLL_RETRY           0x7
+
+/* Error used if server response has invalid headers. */
+#define EST_HTTP_ERROR_BAD_HEADERS       0x8
+
+/* Error used if the client cannot parse server http response. */
+#define EST_ERROR_HTTP_RESP_PARSE        0x9
+
+/* Error used if the server http response is partial. */
+#define EST_ERROR_HTTP_RESP_PARSE_INC    0x10
+
+/* Error used if the client fails during receive from socket . */
+#define EST_ERROR_HTTP_RECV              0x11
+
+/* Error used if the client fails during send to socket . */
+#define EST_ERROR_HTTP_SEND              0x12
+
+
+/* Max len of http paths for EST */
+#define EST_HTTP_PATH_LEN 32
 
 /* Structure which contains the /cacert response from the server.*/
 typedef struct ESTCaCerts_Info {
@@ -33,6 +65,11 @@ typedef struct ESTCaCerts_Info {
 
 }ESTCaCerts_Info_t;
 
+/* Inform the caller with the value sof the generated tls-unique */
+typedef void (*est_publish_tls_unique)(const char *value, size_t len);
+
+/* Users of this library must implement this callback to provide a valid csr */
+typedef bool_t (*est_get_csr_t)(void *ctx, const char *tlsunique, size_t tlsunique_len, byte_t *csr, size_t *csr_len, ESTError_t *err);
 
 
 /* EST client configuration options, used to build the runtime client.*/
@@ -42,6 +79,9 @@ typedef struct ESTClient_Options {
     If set to true the client doesn't verify the Server Certificate status and validity.
     Only useful for testing purposes.*/
   bool_t skip_tls_verify;
+
+  /* Retrieve TLS unique information from TLS channel and publishe the value to the caller. */
+  bool_t use_pop;
 
   /* Trust anchor chain used to verify the EST server certificate. */
   ESTCertificate_t **chain;
@@ -64,8 +104,8 @@ typedef struct ESTClient_Options {
   /* Interface for the native machine network implementation (TLS).*/
   ESTTLSInterface_t *tlsInterface;
 
-  /* Interface for the selected HTTP implementation.*/
-  ESTHttpInterface_t *httpInterface;
+  /* Implementation of callback to compose the csr*/
+  est_get_csr_t get_csr;
 
 }ESTClient_Options_t;
 
@@ -93,20 +133,46 @@ bool_t est_connect(ESTClient_Ctx_t *ctx, const char *host, int port, const ESTAu
    */
 bool_t est_cacerts(ESTClient_Ctx_t *ctx, ESTCaCerts_Info_t *output, ESTError_t *err);
 
-/* Request /simpleenroll.
-    Requests a new certificate using EST protocol. */
-ESTCertificate_t * est_simpleenroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len, ESTError_t *err);
-
-/* Request /simplereenroll.
-    Requests a renewed certificate using EST protocol. */
-ESTCertificate_t * est_simplereenroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len, ESTError_t *err);
-
 /* Release inner memory for cacerts response
 */
 void est_cacerts_free(ESTClient_Ctx_t *ctx, ESTCaCerts_Info_t *cacerts);
 
+/* Request /simpleenroll or /simplereenroll */
+ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len, bool_t renew, ESTError_t *err);
+
 /* Release inner memory for simpleenroll response
 */
-void est_simpleenroll_free(ESTClient_Ctx_t *ctx, ESTCertificate_t *crt);
+void est_enroll_free(ESTClient_Ctx_t *ctx, ESTCertificate_t *crt);
+
+
+
+typedef struct ESTClientEnroll_Ctx {
+  ESTCaCerts_Info_t cacerts;
+  ESTCertificate_t *enrolled;
+  ESTClient_Ctx_t *ctx;
+}ESTClientEnroll_Ctx_t;
+
+typedef struct ESTClientCacerts_Ctx {
+  ESTCaCerts_Info_t cacerts;
+  ESTClient_Ctx_t *ctx;
+}ESTClientCacerts_Ctx_t;
+
+bool_t est_client_cacerts(const ESTClient_Options_t *opts, const char *host, int port, ESTClientCacerts_Ctx_t *output, ESTError_t *err);
+void est_client_cacerts_free(ESTClientCacerts_Ctx_t *cacerts_ctx);
+bool_t est_client_simpleenroll(const ESTClient_Options_t *opts, 
+    const char *host, 
+    int port, 
+    ESTAuthData_t *auth,
+    void *csr_ctx, 
+    ESTClientEnroll_Ctx_t *output,
+    ESTError_t *err);
+bool_t est_client_simplereenroll(const ESTClient_Options_t *opts, 
+    const char *host, 
+    int port, 
+    ESTAuthData_t *auth,
+    void *csr_ctx, 
+    ESTClientEnroll_Ctx_t *output,
+    ESTError_t *err);
+void est_client_enroll_free(ESTClientEnroll_Ctx_t *enroll_ctx);
 
 #endif /* F2508F72_AAF8_4454_A55F_D80E16429572 */

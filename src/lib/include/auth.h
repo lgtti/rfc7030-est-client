@@ -17,8 +17,7 @@
 
 // HTTP basic authentication requires username id and password secret
 typedef struct ESTBasicAuth {
-    char id[EST_BASIC_AUTH_ID_LEN];
-    char secret[EST_BASIC_AUTH_SECRET_LEN];
+    char b64secret[EST_BASIC_AUTH_LEN];
 }ESTBasicAuth_t;
 
 typedef struct ESTPrivKey ESTPrivKey_t;
@@ -44,6 +43,5 @@ typedef struct ESTAuthData {
     /* type field defines which auth is selected and configured. */
     byte_t type;
 }ESTAuthData_t;
-
 
 #endif /* D5F3F934_DFB4_4190_89B8_1926BFD61AE5 */
