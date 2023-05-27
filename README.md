@@ -4,14 +4,22 @@ Library and client implementation of EST Enrollment Protocol RFC 7030 [https://w
 
 ## Why another EST Client
 Actually the standard reference implementation [https://github.com/cisco/libest](https://github.com/cisco/libest) 
-is very complex and with a support for Android platform. In addition, this version uses a specific OpenSSL library version.
+is very complex (Android support, BRSKI support, ...).
 
-In the IoT world, we have some devices with different SSL libraries (e.g. WolfSSL, BoringSSL, MbedTLS...) or different platforms (e.g. FreeRTOS).
+Another problem with libest is the SSL library implementation used: openssl. Currently is the only supported backend and change this is not so easy (the code is made by openssl calls).
 
-To support different platforms and libraries we need a 'pluggable' client.
+In the IoT world, we have devices with different SSL libraries (e.g. WolfSSL, BoringSSL, MbedTLS...) or different platforms that need non-standard compilation methods or build chainsd (e.g. FreeRTOS and some market PLCs).
 
-## Repository structure
-### Library
+To support different platforms and libraries we need a 'pluggable' and configurable client.
+
+## The project
+This repository contains three different types of EST clients. You need to choose the correct one based on some conditions and configuration or needs.
+
+### EST raw library
+Located in <b>src/lib</b> folder, is the real EST implementation.
+This implementation is not a fully functional client but a very low level set of methods prefixed by est_xxx which implements all techical parts of the protocol.
+
+#### Library
 The /src folder contains all the code required by the EST library. This library is only the implementation of the protocol without any logic. 
 
 #### CMake
