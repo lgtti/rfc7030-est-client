@@ -13,7 +13,16 @@ In the IoT world, we have devices with different SSL libraries (e.g. WolfSSL, Bo
 To support different platforms and libraries we need a 'pluggable' and configurable client.
 
 ## RFC7030 - EST Requirements 
-|RFC Chapter ref|Requirement description|Level|Status|OpenSSL 1.0|
+### Endpoint details
+|Endpoint|Status|
+|--------|------|
+|/cacerts|IMPLEMENTED|
+|/simpleenroll|IMPLEMENTED|
+|/simplereenroll|IMPLEMENTED|
+|/fullcmc|NOT IMPLEMENTED|
+|/csrattrs|NOT IMPLEMENTED|
+### Detailed requirement table
+|RFC Chapter ref|Requirement description|Level|OpenSSL 1.0|Test
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------- |
 | 2.1.  Obtaining CA Certificates<br>3.2.3.  HTTP-Based Client Authentication<br>3.3.1.  TLS-Based Server Authentication<br>3.6.  Server Authorization<br>4.1.1.  Bootstrap Distribution of CA Certificates | Verifying the EST server's HTTPS URI against the EST server's certificate using Implicit TAs (similar to a common HTTPS exchange).<br>The client MUST NOT respond to the server's HTTP authentication request unless the client has authorized the EST server.<br>Certificate validation MUST be performed as per [RFC5280].  The EST server certificate MUST conform to the [RFC5280] certificate profile                                                                                            | MUST                                     | IMPLEMENTED     | test_client_enroll_invalid_est_ta                                                              |
 | 3.3.  TLS Layer                                                                                                                                                                                           | The client can leverage the binding of a shared credential to a specific EST server with a certificate-less TLS cipher suite                                                                                                                                                                                                                                                                                                                                                                          | OPTIONAL                                 | NOT IMPLEMENTED |                                                                                                |
@@ -49,7 +58,7 @@ This repository contains three different types of EST clients. You need to choos
 
 ### EST raw library
 Located in <b>src/lib</b> folder, is the real EST implementation.
-This implementation is not a fully functional client but a very low level set of methods prefixed by est_xxx which implements all techical parts of the protocol.
+This implementation is not a fully functional client but a very low level set of methods prefixed by est_xxx which implements all technical parts of the protocol.
 
 
 
