@@ -224,7 +224,11 @@ int main(int argc, char *argv[]) {
     memset(&rfcConfig, 0, sizeof(rfcConfig));
     rfcConfig.opts.host = host;
     rfcConfig.opts.port = port;
-    rfcConfig.opts.cachain = chain_content;
+
+    if(!skip_tls_verify) {
+        rfcConfig.opts.cachain = chain_content;
+    }
+
     rfcConfig.opts.label = label;
 
     if(enroll || renew) { 

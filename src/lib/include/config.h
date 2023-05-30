@@ -35,8 +35,8 @@
 /* Standard port defined by RFC 7030. */
 #define EST_TCP_PORT 443
 
-/* TLS unique len (usually 64bytes) */
-#define EST_TLS_UNIQUE_LEN 64
+/* TLS unique len (usually 256bytes) */
+#define EST_TLS_UNIQUE_LEN 256
 
 /* Len of CSR must be smaller than the HTTP Request max size */
 #define EST_CSR_MAX_LEN (HTTP_REQ_MAX_LEN / 2)

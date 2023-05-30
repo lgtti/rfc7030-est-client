@@ -22,7 +22,7 @@ To support different platforms and libraries we need a 'pluggable' and configura
 |/fullcmc|NOT IMPLEMENTED|
 |/csrattrs|NOT IMPLEMENTED|
 ### Detailed requirement table
-|RFC Chapter ref|Requirement description|Level|OpenSSL 1.0|Test
+|RFC Chapter ref|Requirement description|Level|Status|Test
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------- |
 | 2.1.  Obtaining CA Certificates<br>3.2.3.  HTTP-Based Client Authentication<br>3.3.1.  TLS-Based Server Authentication<br>3.6.  Server Authorization<br>4.1.1.  Bootstrap Distribution of CA Certificates | Verifying the EST server's HTTPS URI against the EST server's certificate using Implicit TAs (similar to a common HTTPS exchange).<br>The client MUST NOT respond to the server's HTTP authentication request unless the client has authorized the EST server.<br>Certificate validation MUST be performed as per [RFC5280].  The EST server certificate MUST conform to the [RFC5280] certificate profile                                                                                            | MUST                                     | IMPLEMENTED     | test_client_enroll_invalid_est_ta                                                              |
 | 3.3.  TLS Layer                                                                                                                                                                                           | The client can leverage the binding of a shared credential to a specific EST server with a certificate-less TLS cipher suite                                                                                                                                                                                                                                                                                                                                                                          | OPTIONAL                                 | NOT IMPLEMENTED |                                                                                                |
@@ -56,39 +56,49 @@ To support different platforms and libraries we need a 'pluggable' and configura
 ## The project
 This repository contains three different types of EST clients. You need to choose the correct one based on some conditions and configuration or needs.
 
-### EST raw library
+### EST library
 Located in <b>src/lib</b> folder, is the real EST implementation.
 This implementation is not a fully functional client but a very low level set of methods prefixed by est_xxx which implements all technical parts of the protocol.
 
+The <b>include</b> folder contains all internal headers - you shouldn't use them. There are only two important headers you could use:
 
+- include/rfc7030.h contains the definition of the RFC compliant client implementation.
+- include/est.h contains all low-level functions.
 
-#### Library
-The /src folder contains all the code required by the EST library. This library is only the implementation of the protocol without any logic. 
+In this folder you can find a first level client implementation; this client is agnostic regarding the SSL library used and MUST be used only as a support for the real client.
 
-#### CMake
-If you want to use the library without a client you can import the source code in you project using the provided cmake import file /src/est_library.cmake.
+This is the recap:
+| header        | function prefix | scope             |
+|--------       |-----------------|-------            |
+| include/est.h | est_            | low level EST API |
+| include/est.h | est_client      | EST Api Client basic logic implementation   |
+| include/rfc7030.h | (all)      | EST API interface Client Only    |
 
-For example:
-```
-include(${EST_LIBRARY_DIR}/src/est_library.cmake)
-```
+#### Opaque types
+As described before, the EST library is agnostic about the SSL/X.509 implementation.
 
-#### Other
-If you are not using CMake you can import the library using your preferred tool or using classic importing procedure.
+To support this requirement there are several opaque types that must be implemented using the SSL/X.509 implementation.
 
-You need to add /src/include as include directory.
+You can find the description for every type in the header file as a comment.
 
-You need to add /src/ as linked directory.
+### Dependencies
+The client library uses only 1 third parts dependency and is a compile dependency.
 
-### Reference implementation
-Client folder contains the reference implementation for a standard client using the EST library. 
+You can find the picohttpparser library as a git submodule in the src/third_party folder. No additional dependency are used.
 
-#### OpenSSL
-##### Supported versions
-#### mbedTLS
-#### wolfSSL
+At runtime, the clients needs only a backend library implementation, such as OpenSSL, to run.
 
-## Build
+## Available SSL/X.509 Backends
+### OpenSSL
+Located in <b>src/openssl</b>, is the implementation of all EST SSL and X.509 operations used by the EST.
+
+- *_x509.c: this file contains the OpenSSL code to parse and manage X.509 objects. Current objects are certificates, pkcs7 containers and certificate stores.
+
+- *_tls.c: this file contains the OpenSSL code to init and configure a TLS connection.
+
+- *_rfc.c: the implementation of the EST client based on the OpenSSL layer.
+
+- *_test.c: functions used to execute tests (unit and integrations).
 
 
 
