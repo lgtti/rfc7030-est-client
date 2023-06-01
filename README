@@ -1,0 +1,14 @@
+rfc7030-est-client
+
+Library and client implementation of EST Enrollment Protocol RFC 7030 
+https://www.rfc-editor.org/rfc/rfc7030.html
+
+Why another EST Client
+Actually the standard reference implementation [https://github.com/cisco/libest](https://github.com/cisco/libest) 
+is very complex (Android support, BRSKI support, ...).
+
+Another problem with libest is the SSL library implementation used: openssl. Currently is the only supported backend and change this is not so easy (the code is made by openssl calls).
+
+In the IoT world, we have devices with different SSL libraries (e.g. WolfSSL, BoringSSL, MbedTLS...) or different platforms that need non-standard compilation methods or build chainsd (e.g. FreeRTOS and some market PLCs).
+
+To support different platforms and libraries we need a 'pluggable' and configurable client.

@@ -53,6 +53,23 @@ To support different platforms and libraries we need a 'pluggable' and configura
 | 3.3.  TLS Layer<br>3.5.  Linking Identity and POP Information                                                                                                                                             | The client can determine if the server requires the linking of identity and POP by examining the CSR Attributes Response                                                                                                                                                                                                                                                                                                                                                                              | OPTIONAL                                 | NOT IMPLEMENTED |                                                                                                |
 | 3.3.  TLS Layer<br>3.5.  Linking Identity and POP Information                                                                                                                                             | Regardless of the CSR Attributes Response, clients SHOULD link identity and POP by embedding tls-unique information in the certification request                                                                                                                                                                                                                                                                                                                                                      | OPTIONAL                                 | IMPLEMENTED     | test_client_enroll_basic_pop                                                                   |
 
+
+## Build
+
+cmake -Ssrc -Bbuild
+cd build
+make
+./bin/rfc7030-est-client-tests
+./bin/rfc7030-est-integration-tests
+
+
+### Run the tests
+
+
+
+
+
+
 ## The project
 This repository contains some parts of the EST rfc implementation:
 - Low level library
@@ -89,25 +106,16 @@ You can find the picohttpparser library as a git submodule in the src/third_part
 
 At runtime, the clients needs only a backend library implementation, such as OpenSSL, to run.
 
-## Available SSL/X.509 Backends
+## SSL/X.509 Backend
 As described before, the EST library (and the client you can find in the src/lib folder) is agnostic about the SSL/X.509 implementation. This provides the freedom to port the code to every platform you want or need.
 
 To support this requirement there are several opaque types that must be implemented using the SSL/X.509 implementation.
 
 You can find the description for every type in the header file as a comment.
 
-### OpenSSL backend implementation
-The <b>src/openssl</b> folder implements a fully functional OpenSSL backend code.
+### Structure of a backend
 
-No public header is defined (for more information see the backend implementation section of this README) and the internal.h
-file is only for internal purposes.
 
-It's split in several source files:
-- openssl.c: utility methods, internal.
-- openssl_test.c: functions used by unit and integration tests. 
-- openssl_tls.c: TLS implementation using OpenSSL.
-- openssl_x509.c: contains all functions used to parse and manage opaque types.
-- openssl_rfc.c: the real RFC Client OpenSSL implementation.
 
 
 
