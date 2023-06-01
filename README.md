@@ -59,6 +59,7 @@ This repository contains some parts of the EST rfc implementation:
 - SSL/X.509 Backend agnostic client logic
 - Unit tests
 - Integration tests
+- OpenSSL backend implementation
 - Command line blueprint client
 
 ### Low level library and SSL/X.509 Backend agnostic client logic
@@ -76,6 +77,11 @@ Tests are implemented using a specific backend implemenation so if you want to s
 
 Integration tests runs with the http://testrfc7030.com est server so an internet connection is mandatory.
 
+### Command line blueprint client
+The folder <b>src/client</b> contains the EST Client reference implementation.
+
+The client supports every backend implementation using build parameters. 
+
 ### Dependencies
 The client library uses only 1 third parts dependency and is a compile dependency.
 
@@ -90,16 +96,18 @@ To support this requirement there are several opaque types that must be implemen
 
 You can find the description for every type in the header file as a comment.
 
-### OpenSSL
-Located in <b>src/openssl</b>, is the implementation of all EST SSL and X.509 operations used by the EST.
+### OpenSSL backend implementation
+The <b>src/openssl</b> folder implements a fully functional OpenSSL backend code.
 
-- *_x509.c: this file contains the OpenSSL code to parse and manage X.509 objects. Current objects are certificates, pkcs7 containers and certificate stores.
+No public header is defined (for more information see the backend implementation section of this README) and the internal.h
+file is only for internal purposes.
 
-- *_tls.c: this file contains the OpenSSL code to init and configure a TLS connection.
-
-- *_rfc.c: the implementation of the EST client based on the OpenSSL layer.
-
-- *_test.c: functions used to execute tests (unit and integrations).
+It's split in several source files:
+- openssl.c: utility methods, internal.
+- openssl_test.c: functions used by unit and integration tests. 
+- openssl_tls.c: TLS implementation using OpenSSL.
+- openssl_x509.c: contains all functions used to parse and manage opaque types.
+- openssl_rfc.c: the real RFC Client OpenSSL implementation.
 
 
 
