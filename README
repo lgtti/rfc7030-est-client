@@ -18,6 +18,9 @@ Summary
     5.2. Library
         5.2.1 With CMake
         5.2.2 Without CMake
+6. Requirements
+    6.1. Req.TLS
+
 
 
 1. Why another EST Client
@@ -309,3 +312,55 @@ all required headers and source files.
 
 To link the selected backend you need to do the same.
 
+
+6. Requirements
+---------------
+The list of RFC requirements.
+
+Level                           RFC                                 Status
+-----       --------------------------------------------------      ------
+
+MUST        Verifying the EST server's HTTPS URI against            IMPLEMENTED
+            the EST server's certificate using Implicit TAs 
+            (similar to a common HTTPS exchange).
+
+MUST        The client MUST NOT respond to the server's HTTP        IMPLEMENTED
+            authentication request unless the client has 
+            authorized the EST server.
+
+MUST        Certificate validation MUST be performed as per         IMPLEMENTED
+            [RFC5280]. The EST server certificate MUST conform 
+            to the [RFC5280] certificate profile.
+
+OPTIONAL    The client can leverage the binding of a shared         NOT IMPLEMENTED
+            credential to a specific EST server with a 
+            certificate-less TLS cipher suite.
+
+OPTIONAL    TLS with a previously issued client certificate         IMPLEMENTED
+            (e.g., an existing certificate issued by the 
+            EST CA).   
+
+OPTIONAL    TLS with a previously installed certificate             IMPLEMENTED
+            (e.g., manufacturer-installed certificate or a 
+            certificate issued by some other party).
+
+?           Certificate-less TLS (e.g., with a shared               NOT IMPLEMENTED
+            credential distributed out-of-band);
+
+MUST        HTTP-based with a username/password distributed         IMPLEMENTED
+            out-of-band.
+
+OPTIONAL    A client MAY set the username to the                    IMPLEMENTED
+            empty string ("""") if it is presenting a password 
+            that is not associated with a username.
+
+?           Servers that wish to use Basic and Digest               NOT IMPLEMENTED
+            authentication reject the HTTP request using the 
+            HTTP-defined WWW-Authenticate response-header 
+            ([RFC2616], Section 14.47).  
+            
+OPTIONAL    The client is expected to retry the request,            NOT IMPLEMENTED
+            including the appropriate Authorization Request 
+            header ([RFC2617], Section 3.2.2), if the client 
+            is capable of using the Basic or Digest 
+            authentication.
