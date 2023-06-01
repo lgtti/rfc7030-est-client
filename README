@@ -8,9 +8,14 @@ Summary
 2. EST Endpoints
 3. Build
     3.1. Linux/MacOS
+    3.2. Windows
 4. Custom TLS/X.509 Backend
     4.1. Function map
     4.2. Example
+5. Usage
+    5.1. Client
+    5.2. Library
+    5.3. Custom library
 
 
 1. Why another EST Client
@@ -42,7 +47,7 @@ To support different platforms and libraries we need a 'pluggable' and configura
 Compile Dependencies:
 - picohttpparser
 - munit (test only)
-- cargs (client only)
+- cargs (cli client only)
 
 ** Note: all dependencies are downloaded automatically using git submodules.
 
@@ -151,5 +156,89 @@ For example, you want to add a myssl library implementation:
     cd build
     make
 
+- Run unit tests:
+    
+    ./bin/rfc7030-est-client-tests
+
+- Run integration tests:
+
+    ./bin/rfc7030-est-integration-tests
 
 
+5. Usage
+--------
+Due to the generic nature of this EST implementation, you have the freedom to choose the 
+type of usage you want.
+
+You can compile the project and generate the command line client, you can build your 
+own client logic using another backend or you can use the low level library and build 
+you entire client from scratch.
+In addition you can use the current client logic without all "cli" feature importing the code
+in your project.
+
+5.1. Client
+-----------
+Located in the src/client directory, this is a command line interface client.
+You can run
+    
+    ./rfc7030_est_client -h
+
+to view the list of input parameters.
+
+5.1.1 Example
+-------------
+With the client you can run three main operations:
+- CACerts
+
+    This command request to the EST server the list of CA certificates. 
+    No authentication is required here.
+
+    ./rfc7030-est-client -s testrfc7030.com \
+        -p 8443 \
+        --server-chain dstcax3.pem \
+        --output cachain.pem \
+        cacerts
+
+- Enroll
+
+    This command request to the EST Server the emission of a certificate 
+    providing a local csr (p10) file in PEM format.
+    Here we need authentication:
+
+    - Basic Auth
+
+        ./rfc7030-est-client -s testrfc7030.com \
+            -p 8443 \
+            --server-chain dstcax3.pem \
+            --csr req.p10 \
+            --basic-auth "estuser:estpwd" \
+            --output-ca cachain.pem \
+            --output-crt enrolled.pem \
+            enroll
+
+    - TLS Auth
+
+        ./rfc7030-est-client -s testrfc7030.com \
+            -p 9443 \
+            --server-chain dstcax3.pem \
+            --csr req.p10 \
+            --p12 preenrollment.p12 \
+            --p12-password "12345" \
+            --output-ca cachain.pem \
+            --output-crt enrolled.pem \
+            enroll
+
+- Renew
+
+    This command request to the EST Server the emission of a certificate 
+    that renews an old one providing a local csr (p10) file in PEM format
+    and the old certificate (and its key) in P12.
+
+    The syntax of the command is the same as the Enroll changing the p12 file
+    and the last command renew.
+
+
+5.2. Library
+------------
+5.3. Custom library
+-------------------
