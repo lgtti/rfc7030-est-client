@@ -106,7 +106,7 @@ include(${MODULE_ROOT_DIR}/src/lib/est_library.cmake)
 
 ### BEGIN OPENSSL SECTION
 
-include(${MODULE_ROOT_DIR}/src//openssl/ossl_est_client_library.cmake)
+include(${MODULE_ROOT_DIR}/src/openssl/ossl_est_client_library.cmake)
 
 OPTION(USE_OPENSSL "Compile using openssl backend" ON)
 OPTION(USE_OPENSSL_CUSTOM_ROOT "Custom openssl path" OFF)
@@ -130,6 +130,7 @@ if(USE_OPENSSL)
         message( FATAL_ERROR "Required OPENSSL Version greater than 1.0" )
     endif()
 
+    # Define here global SSL agnostic references to this specific OpenSSL Implementation.
     set(SSL_INCLUDE_DIR ${OPENSSL_INCLUDE_DIR} ${EST_OPENSSL_HEADERS})
     set(SSL_LIBRARIES ${OPENSSL_LIBRARIES})
     set(SSL_SRC ${EST_OPENSSL_SRC})

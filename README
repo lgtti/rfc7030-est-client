@@ -4,7 +4,6 @@ https://www.rfc-editor.org/rfc/rfc7030.html
 
 Summary
 -------
-
 1. Why another EST Client
 2. EST Endpoints
 3. Build
@@ -42,8 +41,8 @@ To support different platforms and libraries we need a 'pluggable' and configura
 --------
 Compile Dependencies:
 - picohttpparser
-- munit
-- cargs
+- munit (test only)
+- cargs (client only)
 
 ** Note: all dependencies are downloaded automatically using git submodules.
 
@@ -112,7 +111,6 @@ function MUST be implemented. There aren't optional functions.
 
 4.2. Example
 ------------
-
 For example, you want to add a myssl library implementation:
 - Create new folder:
 
@@ -129,9 +127,29 @@ For example, you want to add a myssl library implementation:
         - rfc7030_request_certificate
         - rfc7030_renew_certificate
 
+- Create new cmake file:
+
+    src/myssl/myssl_est_client_library.cmake
+
+    This file must expose all headers and source files required by the backend implementation.
+    An example is src/openssl/ossl_est_client_library.cmake.
+
 - Add the library to the src/CMakeLists.txt file:
+  Please remember to add a new cmake option (disabled by default) to enable/disable the new backend. For this example could be
+
+    OPTION(USE_MYSSL "Compile using myssl backend" OFF)
+
     ** Note: search in the file for the ### BEGIN OPENSSL SECTION
              and replicate the OpenSSL section as example.
+
+- Prepare cmake with flags:
+
+    cmake -Ssrc -Bbuild -DUSE_MYSSL=ON -DUSE_OPENSSL=OFF
+
+- Build the code:
+
+    cd build
+    make
 
 
 
