@@ -54,32 +54,27 @@ To support different platforms and libraries we need a 'pluggable' and configura
 | 3.3.  TLS Layer<br>3.5.  Linking Identity and POP Information                                                                                                                                             | Regardless of the CSR Attributes Response, clients SHOULD link identity and POP by embedding tls-unique information in the certification request                                                                                                                                                                                                                                                                                                                                                      | OPTIONAL                                 | IMPLEMENTED     | test_client_enroll_basic_pop                                                                   |
 
 ## The project
-This repository contains three different types of EST clients. You need to choose the correct one based on some conditions and configuration or needs.
+This repository contains some parts of the EST rfc implementation:
+- Low level library
+- SSL/X.509 Backend agnostic client logic
+- Unit tests
+- Integration tests
+- Command line blueprint client
 
-### EST library
-Located in <b>src/lib</b> folder, is the real EST implementation.
-This implementation is not a fully functional client but a very low level set of methods prefixed by est_xxx which implements all technical parts of the protocol.
+### Low level library and SSL/X.509 Backend agnostic client logic
+<b>src/lib</b> folder, contins the real EST implementation and a partial implementation for an EST client.
 
-The <b>include</b> folder contains all internal headers - you shouldn't use them. There are only two important headers you could use:
+Library is a very low level set of methods prefixed by est_xxx which implements all technical parts of the protocol, for example
+est_connect or est_cacert. These functions only implements specific parts of the RFC so its difficoult to use them directly.
 
-- include/rfc7030.h contains the definition of the RFC compliant client implementation.
-- include/est.h contains all low-level functions.
+In this folder you can find a first level client implementation; this client is agnostic regarding the SSL library used and MUST be used only as a support for the real client. Client functions uses a standard prefix est_client_xxx.
 
-In this folder you can find a first level client implementation; this client is agnostic regarding the SSL library used and MUST be used only as a support for the real client.
+### Unit tests and Integration tests
+The two folders <b>src/test</b> and <b>src/integration</b> contains the code used to run all tests. Both produces an executable.
 
-This is the recap:
-| header        | function prefix | scope             |
-|--------       |-----------------|-------            |
-| include/est.h | est_            | low level EST API |
-| include/est.h | est_client      | EST Api Client basic logic implementation   |
-| include/rfc7030.h | (all)      | EST API interface Client Only    |
+Tests are implemented using a specific backend implemenation so if you want to support a new SSL or X.509 technology you need to implementa test functions also.
 
-#### Opaque types
-As described before, the EST library is agnostic about the SSL/X.509 implementation.
-
-To support this requirement there are several opaque types that must be implemented using the SSL/X.509 implementation.
-
-You can find the description for every type in the header file as a comment.
+Integration tests runs with the http://testrfc7030.com est server so an internet connection is mandatory.
 
 ### Dependencies
 The client library uses only 1 third parts dependency and is a compile dependency.
@@ -89,6 +84,12 @@ You can find the picohttpparser library as a git submodule in the src/third_part
 At runtime, the clients needs only a backend library implementation, such as OpenSSL, to run.
 
 ## Available SSL/X.509 Backends
+As described before, the EST library (and the client you can find in the src/lib folder) is agnostic about the SSL/X.509 implementation. This provides the freedom to port the code to every platform you want or need.
+
+To support this requirement there are several opaque types that must be implemented using the SSL/X.509 implementation.
+
+You can find the description for every type in the header file as a comment.
+
 ### OpenSSL
 Located in <b>src/openssl</b>, is the implementation of all EST SSL and X.509 operations used by the EST.
 
