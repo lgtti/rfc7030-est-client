@@ -2,5 +2,5 @@
 **/.DS_Store
 **/build
 .vscode
-res
+/res
 build

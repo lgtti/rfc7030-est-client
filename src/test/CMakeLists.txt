@@ -11,7 +11,6 @@ add_executable(rfc7030-est-client-tests
 
 target_include_directories(rfc7030-est-client-tests
                             PRIVATE 
-
                             .
                             ${EST_HEADERS})
 
@@ -22,12 +21,7 @@ target_include_directories(rfc7030-est-client-tests PRIVATE
 
 target_link_libraries(rfc7030-est-client-tests ${SSL_LIBRARIES})
 target_sources(rfc7030-est-client-tests PRIVATE ${SSL_SRC} ${SSL_SRC_TEST} ${MUNIT_DIR}/munit.c)
-
-OPTION(USE_CUSTOM_CONFIG "Option description" ON)
-if(USE_CUSTOM_CONFIG)
-    target_compile_definitions(rfc7030-est-client-tests PRIVATE EST_CONFIG_CUSTOM_FILE="custom_config.h")
-endif()
-
+target_compile_definitions(rfc7030-est-client-tests PRIVATE EST_CONFIG_CUSTOM_FILE="custom_config.h")
 target_compile_definitions(rfc7030-est-client-tests PRIVATE MUNIT_NO_FORK)
 
 add_compile_definitions(TEST_RESOURCE_FOLDER="${MODULE_ROOT_DIR}/src/test/res")

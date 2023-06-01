@@ -146,24 +146,6 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
     ESTClient_Options_t est_opts;
     memset(&est_opts, 0, sizeof(est_opts));
 
-    ESTTLSInterface_t tls;
-    tls.initialize = tls_init;
-    tls.free = tls_free;
-    tls.get_unique = tls_unique;
-
-    ESTX509Interface_t x509;
-    x509.pkcs7_parse = x509_pkcs7_parse;
-    x509.pkcs7_free = x509_pkcs7_free;
-    x509.pkcs7_get_certificates = x509_pkcs7_get_certificates;
-    x509.pkcs7_get_first_certificate = x509_pkcs7_get_first_certificate;
-    x509.certificate_parse = x509_certificate_parse;
-    x509.certificate_is_self_signed = x509_certificate_is_self_signed;
-    x509.certificate_free = x509_certificate_free;
-    x509.certificate_verify = x509_certificate_verify;
-    x509.certificate_store_create = x509_certificate_store_create;
-    x509.certificate_store_free = x509_certificate_store_free;
-    x509.certificate_store_add = x509_certificate_store_add;
-
     est_opts.get_csr = rfcConfig.get_csr;
     est_opts.use_pop = tls.get_unique != NULL;
     est_opts.tlsInterface = &tls;

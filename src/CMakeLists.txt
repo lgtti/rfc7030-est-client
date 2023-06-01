@@ -102,6 +102,10 @@ endif()
 
 
 include(${MODULE_ROOT_DIR}/src/lib/est_library.cmake)
+
+
+### BEGIN OPENSSL SECTION
+
 include(${MODULE_ROOT_DIR}/src//openssl/ossl_est_client_library.cmake)
 
 OPTION(USE_OPENSSL "Compile using openssl backend" ON)
@@ -109,11 +113,10 @@ OPTION(USE_OPENSSL_CUSTOM_ROOT "Custom openssl path" OFF)
 OPTION(USE_OPENSSL_CUSTOM_ROOT_PATH "Custom openssl path" /usr/local/opt/openssl)
 
 if(USE_OPENSSL)
-
-    if(APPLE)
-        if(USE_OPENSSL_CUSTOM_ROOT)
-            set(OPENSSL_ROOT_DIR USE_OPENSSL_CUSTOM_ROOT_PATH)
-        else()
+    if(USE_OPENSSL_CUSTOM_ROOT)
+        set(OPENSSL_ROOT_DIR USE_OPENSSL_CUSTOM_ROOT_PATH)
+    else()
+        if(APPLE)
             set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
         endif()
     endif()
@@ -134,6 +137,8 @@ if(USE_OPENSSL)
 else()
     message( FATAL_ERROR "No SSL/TLS backend specified. " )
 endif()
+
+### END OPENSSL SECTION
 
 add_subdirectory(${MODULE_ROOT_DIR}/src/client)
 add_subdirectory(${MODULE_ROOT_DIR}/src/test)

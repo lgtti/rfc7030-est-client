@@ -8,7 +8,10 @@ Summary
 1. Why another EST Client
 2. EST Endpoints
 3. Build
-    3.1 Linux
+    3.1. Linux/MacOS
+4. Custom TLS/X.509 Backend
+    4.1. Function map
+    4.2. Example
 
 
 1. Why another EST Client
@@ -31,35 +34,104 @@ To support different platforms and libraries we need a 'pluggable' and configura
     /cacerts            IMPLEMENTED
     /simpleenroll       IMPLEMENTED
     /simplereenroll     IMPLEMENTED
-    /fullcmc            IMPLEMENTED
-    /csrattrs           IMPLEMENTED
+    /fullcmc            NOT IMPLEMENTED
+    /csrattrs           NOT IMPLEMENTED
 
 
 3. Build
 --------
-Dependencies:
-- cmake
+Compile Dependencies:
+- picohttpparser
+- munit
+- cargs
 
-3.1 Linux
----------
-- Setup cmake artifacts
+** Note: all dependencies are downloaded automatically using git submodules.
+
+Current cmake build configuration provides some default arguments you can on/off 
+as you wish:
+- BUILD_CLONE_SUBMODULES=ON             set to off to avoid close third parts compile 
+                                        dependencies.
+- USE_OPENSSL=ON                        current default TLS/X.509 backend implementation.
+- USE_OPENSSL_CUSTOM_ROOT=OFF           enable the variable USE_OPENSSL_CUSTOM_ROOT_PATH
+- USE_OPENSSL_CUSTOM_ROOT_PATH=""       enabled using USE_OPENSSL_CUSTOM_ROOT=ON, 
+                                        sets the path used to find the openssl root dir.
+
+3.1. Linux/MacOS
+----------------
+- Setup cmake artifacts:
   If you want to change the build output directory update the -B flag.
 
     cmake -Ssrc -Bbuild
 
-- Compile the code
+- Compile the code:
     
     cd build
     make
 
     ** Note: at the end you will find the artifact build/rfc7030-est-client 
 
-- Run unit tests
+- Run unit tests:
     
     ./bin/rfc7030-est-client-tests
 
-- Run integration tests
+- Run integration tests:
 
     ./bin/rfc7030-est-integration-tests
+
+
+4. Custom TLS/X.509 Backend
+---------------------------
+As described in the general description, this EST implementation is agnostic
+regarding the runtime crypto library.
+If you need a non-compliant library you must create your backend following some
+rules and configuring the plugin.
+
+The logic of the EST client is written in the 
+    src/lib 
+folder but, to invoke the provided client with a backend, you need some additional operations, such as parse 
+authentication certificates, parse certificate output result and other.
+
+A new backend need to expose and implement ALL function definitions located in the header
+file 
+    src/lib/include/rfc7030.h
+
+    ** Note: an example for OpenSSL is located in src/openssl/openssl_rfc.c
+
+4.1. Function map
+-----------------
+The core of the backend plugin is the config function map. Basically, is a set of function
+pointers used by the EST core library to invoke implementation-specific functions.
+
+Two different maps are required:
+- ESTTLSInterface_t:    used to invoke TLS specific functions, such as init TLS channel and read/write bytes.
+- ESTX509Interface_t:   used to parse, decode and encode specific X.509 objects such as 
+                        Certificates, Store, PKCS7 formats.
+
+These maps MUST be configured by the backend (for example see the src/openssl/openssl_rfc.c file) and ALL 
+function MUST be implemented. There aren't optional functions.
+
+4.2. Example
+------------
+
+For example, you want to add a myssl library implementation:
+- Create new folder:
+
+    src/myssl
+
+- Create new file:
+
+    src/myssl/myssl_rfc.c
+
+    ** Note: this file must implement all functions definitions:
+        - rfc7030_init
+        - rfc7030_get_config
+        - rfc7030_request_cachain
+        - rfc7030_request_certificate
+        - rfc7030_renew_certificate
+
+- Add the library to the src/CMakeLists.txt file:
+    ** Note: search in the file for the ### BEGIN OPENSSL SECTION
+             and replicate the OpenSSL section as example.
+
 
 

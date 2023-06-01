@@ -17,12 +17,7 @@ target_include_directories(rfc7030-est-client
 target_include_directories(rfc7030-est-client PRIVATE ${SSL_INCLUDE_DIR} ${EST_OPENSSL_HEADERS})
 target_link_libraries(rfc7030-est-client ${SSL_LIBRARIES})
 target_sources(rfc7030-est-client PRIVATE ${SSL_SRC})
-
 target_link_libraries(rfc7030-est-client cargs)
-
-OPTION(USE_CUSTOM_CONFIG "Option description" ON)
-if(USE_CUSTOM_CONFIG)
-    target_compile_definitions(rfc7030-est-client PRIVATE EST_CONFIG_CUSTOM_FILE="custom_config.h")
-endif()
+target_compile_definitions(rfc7030-est-client PRIVATE EST_CONFIG_CUSTOM_FILE="custom_config.h")
 
 
