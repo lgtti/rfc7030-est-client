@@ -14,8 +14,10 @@ Summary
     4.2. Example
 5. Usage
     5.1. Client
+        5.1.1 Example
     5.2. Library
-    5.3. Custom library
+        5.2.1 With CMake
+        5.2.2 Without CMake
 
 
 1. Why another EST Client
@@ -101,6 +103,7 @@ file
 
     ** Note: an example for OpenSSL is located in src/openssl/openssl_rfc.c
 
+
 4.1. Function map
 -----------------
 The core of the backend plugin is the config function map. Basically, is a set of function
@@ -113,6 +116,7 @@ Two different maps are required:
 
 These maps MUST be configured by the backend (for example see the src/openssl/openssl_rfc.c file) and ALL 
 function MUST be implemented. There aren't optional functions.
+
 
 4.2. Example
 ------------
@@ -140,7 +144,8 @@ For example, you want to add a myssl library implementation:
     An example is src/openssl/ossl_est_client_library.cmake.
 
 - Add the library to the src/CMakeLists.txt file:
-  Please remember to add a new cmake option (disabled by default) to enable/disable the new backend. For this example could be
+  Please remember to add a new cmake option (disabled by default) to enable/disable the new backend. 
+  For this example could be
 
     OPTION(USE_MYSSL "Compile using myssl backend" OFF)
 
@@ -176,6 +181,7 @@ you entire client from scratch.
 In addition you can use the current client logic without all "cli" feature importing the code
 in your project.
 
+
 5.1. Client
 -----------
 Located in the src/client directory, this is a command line interface client.
@@ -184,6 +190,7 @@ You can run
     ./rfc7030_est_client -h
 
 to view the list of input parameters.
+
 
 5.1.1 Example
 -------------
@@ -240,5 +247,65 @@ With the client you can run three main operations:
 
 5.2. Library
 ------------
-5.3. Custom library
+If you don't want (o you can't) use the pre-compiled client or you want to include 
+the EST client in your code, you can write your own using the EST core library.
+
+This project is not developed with the idea to generate a shared or dynamic library.
+To address PLC or low level hardware implementations, the code MUST be compiled with 
+the source code of the client. This makes the library compatible with FreeRTOS also.
+
+The drawback is that you must clone this repo and add to your build toolchain all required
+headers and source files.
+
+To use all library functions you need to include only one header file 
+
+    #include <est.h>
+
+and this provides to you the access to all low level functions (prefixed with est_xxx) and
+all low level "client" functions (prefixed with est_client_xxx).
+
+** Note: see the src/openssl/openssl_rfc.c file to check how to uswe the low level EST library
+functions.
+
+5.2.1 With CMake
+------------
+If you are using cmake, you can add all required file using the provided cmake import file
+
+    include(${MODULE_ROOT_DIR}/src/lib/est_library.cmake)
+
+    ** Note: this include provides to you cmake config some variables:
+    - EST_SRC
+    - EST_HEADERS
+
+In addition, if you want to use an already implemented backend, you must add it in the same way.
+Here the example for OpenSSL:
+
+    include(${MODULE_ROOT_DIR}/src/openssl/ossl_est_client_library.cmake)
+
+    ** Note: this include provides to you cmake config some variables:
+    - EST_OPENSSL_SRC
+    - EST_OPENSSL_SRC_TEST
+    - EST_OPENSSL_HEADERS
+
+
+5.2.2 Without CMake
 -------------------
+If you don't want to use cmake or you need another compile manager you can directly link
+all required headers and source files.
+
+- Set the include directory 
+
+    src/lib/include
+
+- Set the src files to link 
+
+    src/lib/cacerts.c
+    src/lib/client.c
+    src/lib/enroll.c
+    src/lib/error.c
+    src/lib/est.c
+    src/lib/http.c
+    src/lib/picohttp.c
+
+To link the selected backend you need to do the same.
+
