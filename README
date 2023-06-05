@@ -9,16 +9,17 @@ Summary
 3. Build
     3.1. Linux/MacOS
     3.2. Windows
-4. Custom TLS/X.509 Backend
-    4.1. Function map
-    4.2. Example
-5. Usage
-    5.1. Client
-        5.1.1 Example
-    5.2. Library
-        5.2.1 With CMake
-        5.2.2 Without CMake
-6. RFC Requirements
+4. Supported Backends
+5. Custom TLS/X.509 Backend
+    5.1. Function map
+    5.2. Example
+6. Usage
+    6.1. Client
+        6.1.1 Example
+    6.2. Library
+        6.2.1 With CMake
+        6.2.2 Without CMake
+7. RFC Requirements
 
 
 
@@ -87,7 +88,16 @@ as you wish:
     ./bin/rfc7030-est-integration-tests
 
 
-4. Custom TLS/X.509 Backend
+4. Supported Backends
+---------------------
+Here the table of native supported TLS/X.509 backends.
+
+| Name              | Folder            | Version   |
+|-------------------|-------------------|-----------|
+| OpenSSL           | src/openssl       | >= 1.x    |
+
+
+5. Custom TLS/X.509 Backend
 ---------------------------
 As described in the general description, this EST implementation is agnostic
 regarding the runtime crypto library.
@@ -106,7 +116,7 @@ file
     ** Note: an example for OpenSSL is located in src/openssl/openssl_rfc.c
 
 
-4.1. Function map
+5.1. Function map
 -----------------
 The core of the backend plugin is the config function map. Basically, is a set of function
 pointers used by the EST core library to invoke implementation-specific functions.
@@ -120,7 +130,7 @@ These maps MUST be configured by the backend (for example see the src/openssl/op
 function MUST be implemented. There aren't optional functions.
 
 
-4.2. Example
+5.2. Example
 ------------
 For example, you want to add a myssl library implementation:
 - Create new folder:
@@ -172,7 +182,7 @@ For example, you want to add a myssl library implementation:
     ./bin/rfc7030-est-integration-tests
 
 
-5. Usage
+6. Usage
 --------
 Due to the generic nature of this EST implementation, you have the freedom to choose the 
 type of usage you want.
@@ -184,7 +194,7 @@ In addition you can use the current client logic without all "cli" feature impor
 in your project.
 
 
-5.1. Client
+6.1. Client
 -----------
 Located in the src/client directory, this is a command line interface client.
 You can run
@@ -194,7 +204,7 @@ You can run
 to view the list of input parameters.
 
 
-5.1.1 Example
+6.1.1 Example
 -------------
 With the client you can run three main operations:
 - CACerts
@@ -247,7 +257,7 @@ With the client you can run three main operations:
     and the last command renew.
 
 
-5.2. Library
+6.2. Library
 ------------
 If you don't want (o you can't) use the pre-compiled client or you want to include 
 the EST client in your code, you can write your own using the EST core library.
@@ -269,7 +279,7 @@ all low level "client" functions (prefixed with est_client_xxx).
 ** Note: see the src/openssl/openssl_rfc.c file to check how to uswe the low level EST library
 functions.
 
-5.2.1 With CMake
+6.2.1 With CMake
 ------------
 If you are using cmake, you can add all required file using the provided cmake import file
 
@@ -290,7 +300,7 @@ Here the example for OpenSSL:
     - EST_OPENSSL_HEADERS
 
 
-5.2.2 Without CMake
+6.2.2 Without CMake
 -------------------
 If you don't want to use cmake or you need another compile manager you can directly link
 all required headers and source files.
@@ -312,7 +322,7 @@ all required headers and source files.
 To link the selected backend you need to do the same.
 
 
-6. RFC Requirements
+7. RFC Requirements
 ---------------
 The list of RFC requirements.
 
