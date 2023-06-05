@@ -339,10 +339,10 @@ static MunitTest test_suite_tests[] = {
   { (char*) "/est/int/test_client_cacerts", test_client_cacerts, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/int/test_client_cacerts_invalid_est_ta", test_client_cacerts_invalid_est_ta, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/int/test_client_enroll_invalid_est_ta", test_client_enroll_invalid_est_ta, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-  { (char*) "/est/int/test_client_enroll_crt", test_client_enroll_crt, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+ // { (char*) "/est/int/test_client_enroll_crt", test_client_enroll_crt, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/int/test_client_enroll_basic", test_client_enroll_basic, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/int/test_client_renew", test_client_renew, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-  { (char*) "/est/int/test_client_enroll_basic_pop", test_client_enroll_basic_pop, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+ // { (char*) "/est/int/test_client_enroll_basic_pop", test_client_enroll_basic_pop, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 

@@ -19,7 +19,9 @@ Summary
     6.2. Library
         6.2.1 With CMake
         6.2.2 Without CMake
-7. RFC Requirements
+7. Tests
+8. Contribution
+9. RFC Requirements
 
 
 
@@ -322,8 +324,27 @@ all required headers and source files.
 To link the selected backend you need to do the same.
 
 
-7. RFC Requirements
+7. Tests
+--------
+- Run unit tests:
+    
+    ./bin/rfc7030-est-client-tests
+
+- Run integration tests:
+
+    ./bin/rfc7030-est-integration-tests
+
+
+8. Contribution
 ---------------
+If you want to submit a fix or a new backend implementation feel free to 
+provide the pull request.
+Any contribution is welcome :)
+
+Please open a github issue for any question.
+
+7. RFC Requirements
+-------------------
 The list of RFC requirements.
 
 Level                           RFC                                 Status
