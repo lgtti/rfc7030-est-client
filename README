@@ -20,8 +20,10 @@ Summary
         6.2.1 With CMake
         6.2.2 Without CMake
 7. Tests
-8. Contribution
-9. RFC Requirements
+8. Logging
+9. Custom parameters
+10. Contribution
+11. RFC Requirements
 
 
 
@@ -334,8 +336,63 @@ To link the selected backend you need to do the same.
 
     ./bin/rfc7030-est-integration-tests
 
+    ** Note: integration tests need internet connection to reach the EST public welome server.
 
-8. Contribution
+
+8. Logging
+----------
+Some HW platforms requires a specific logging implementation.
+This library doesn't provided any default one, instead offers some macros to be implemented
+using platform-specific code.
+The default implementation is a no-ops impl.
+
+The src/lib/include/config.h header file contains 
+
+    #ifdef EST_CONFIG_CUSTOM_FILE
+    #include EST_CONFIG_CUSTOM_FILE
+    #endif
+
+During CMake build you can define this macro specifing a header file that redefines the logging
+functions.
+For exampke, if you call cmake with 
+
+    cmake ... -DEST_CONFIG_CUSTOM_FILE=mylog.h
+
+the file must contains
+
+    #include "logger.h"
+
+    #undef LOG_INFO
+    #define LOG_INFO(m) log_info m;
+
+    #undef LOG_DEBUG
+    #define LOG_DEBUG(m) log_debug m;
+
+    #undef LOG_WARN
+    #define LOG_WARN(m) log_warn m;
+
+    #undef LOG_ERROR
+    #define LOG_ERROR(m) log_error m;
+
+where log_xxx are platform specific logging functions implemented and linked in your code.
+
+
+9. Custom parameters
+--------------------
+Same as for logging, you can use the macro
+
+    cmake ... -DEST_CONFIG_CUSTOM_FILE=mylog.h
+
+you can undefine and redefine all EST runtime parameters, adapting them to you specific
+HW or environment.
+For example
+
+    #undef HTTP_RESP_CHUNK_LEN
+    #define HTTP_RESP_CHUNK_LEN 10000
+
+changes the default value of the HTTP download payload from the default to 10KB.
+
+10. Contribution
 ---------------
 If you want to submit a fix or a new backend implementation feel free to 
 provide the pull request.
@@ -343,7 +400,7 @@ Any contribution is welcome :)
 
 Please open a github issue for any question.
 
-7. RFC Requirements
+11. RFC Requirements
 -------------------
 The list of RFC requirements.
 
