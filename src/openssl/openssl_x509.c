@@ -3,14 +3,18 @@
 ESTPKCS7_t * x509_pkcs7_parse(byte_t *b64, int b64_bytes_len, ESTError_t *err) {
     unsigned char *p7der = (unsigned char *)malloc(sizeof(unsigned char) * b64_bytes_len);
 
+    LOG_DEBUG(("Parse openssl pkcs7 len %d\n", b64_bytes_len))
+
     /* EVP_DecodeBlock don't work with a PEM formatted divided by \n, so we remove all \n characters*/
     byte_t *b64_singleline = (byte_t *)malloc(b64_bytes_len);
     int singleline_idx = 0;
     for(int i = 0; i < b64_bytes_len; i++) {
-        if(b64[i] != '\n') {
+        if(b64[i] != '\n' && b64[i] != '\r') {
             b64_singleline[singleline_idx++] = b64[i];
         }
     }
+
+    LOG_DEBUG(("Purged openssl pkcs7 len %d\n", singleline_idx))
 
     // Convert B64 to DER
     int p7der_bytes_len = EVP_DecodeBlock(p7der, (unsigned char *)b64_singleline, singleline_idx);
