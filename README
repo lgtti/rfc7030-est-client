@@ -68,6 +68,12 @@ as you wish:
 - USE_OPENSSL_CUSTOM_ROOT=OFF           enable the variable USE_OPENSSL_CUSTOM_ROOT_PATH
 - USE_OPENSSL_CUSTOM_ROOT_PATH=""       enabled using USE_OPENSSL_CUSTOM_ROOT=ON, 
                                         sets the path used to find the openssl root dir.
+- USE_OPENSSL_MANUAL_LINK=OFF           enable manual link to openssl implementation (skip find_package)
+- USE_OPENSSL_MANUAL_LINK_INC=""        if manual link is ON, set the openssl include directory
+- USE_OPENSSL_MANUAL_LINK_LIB=""        if manual link is ON, set the openssl lib path (you need to set 
+                                        at least two libs, libssl and libcrypto). To setup multiple 
+                                        libraries use cmake list format eg. 
+                                        USE_OPENSSL_MANUAL_LINK_LIB=/path/libssl.so\;/path/libcrypto.so
 
 3.1. Linux/MacOS
 ----------------

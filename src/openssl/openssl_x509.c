@@ -161,7 +161,12 @@ bool_t x509_certificate_is_self_signed(ESTCertificate_t *certificate, bool_t *re
     assert(result != NULL);
 
     X509 *cert = (X509 *)certificate;
+
+#if OPENSSL_VERSION_MAJOR > 1
     int ret = X509_self_signed(cert, 1);
+#else
+    int ret = X509_verify(cert, X509_get_pubkey(cert));
+#endif
 
     *result = ret > 0 ? EST_TRUE : EST_FALSE;
 

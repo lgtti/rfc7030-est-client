@@ -38,8 +38,8 @@ void free_legacy_module() {
 }
 
 #else
-static void load_legacy_module() {}
-static void free_legacy_module() {}
+void load_legacy_module() {}
+void free_legacy_module() {}
 #endif
 
 char *oss_err_as_string (void) { 
