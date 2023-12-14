@@ -24,12 +24,14 @@ int32_t tls_recv( NetworkContext_t * pNetworkContext, void * pBuffer, size_t byt
 
     do {
         rb = BIO_read(octx->conn, tmp, to_read);
-        tmp = tmp + rb;
-        total = total + rb;
 
-        LOG_DEBUG(("Read %d\n", rb))
-        LOG_DEBUG(("Total %d\n", total))
+        if(rb != -1) {
+            tmp = tmp + rb;
+            total = total + rb;
 
+            LOG_DEBUG(("Read %d\n", rb))
+            LOG_DEBUG(("Total %d\n", total))   
+        }
     }while((rb > 0 || BIO_should_read(octx->conn)) && (total + to_read) < bytesToRecv );
 
     return total;

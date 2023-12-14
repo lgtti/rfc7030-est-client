@@ -4,3 +4,6 @@
 .vscode
 /res
 build
+p12
+csr
+src/third_party
