@@ -6,6 +6,3 @@
 build
 p12
 csr
-src/third_party/cargs
-src/third_party/picohttpparser
-src/third_party/munit

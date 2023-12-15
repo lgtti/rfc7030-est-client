@@ -4,15 +4,6 @@
 [submodule "src/third_party/picohttpparser"]
 	path = src/third_party/picohttpparser
 	url = https://github.com/h2o/picohttpparser
-[submodule "/Users/yyi9884infocert.it/Documents/lgti/rfc7030-est-client/src/third_party/munit"]
-	path = /Users/yyi9884infocert.it/Documents/lgti/rfc7030-est-client/src/third_party/munit
-	url = https://github.com/nemequ/munit
-[submodule "/Users/yyi9884infocert.it/Documents/lgti/rfc7030-est-client/src/third_party/picohttpparser"]
-	path = /Users/yyi9884infocert.it/Documents/lgti/rfc7030-est-client/src/third_party/picohttpparser
-	url = https://github.com/h2o/picohttpparser
-[submodule "/Users/yyi9884infocert.it/Documents/lgti/rfc7030-est-client/src/third_party/cargs"]
-	path = /Users/yyi9884infocert.it/Documents/lgti/rfc7030-est-client/src/third_party/cargs
-	url = https://github.com/likle/cargs
 [submodule "src/third_party/munit"]
 	path = src/third_party/munit
 	url = https://github.com/nemequ/munit
