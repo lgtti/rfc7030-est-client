@@ -92,15 +92,13 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
             smime-type parameter "certs-only" is used, as specified in [RFC5273].
         The Simple PKI Response is sent with a Content-Transfer-Encoding of "base64
     */
-    VerifyState_t states[2];
+    VerifyState_t states[1];
     memset(states, 0, sizeof(states));
     strcpy(states[0].header.name, HTTP_HEADER_CONTENT_TYPE);
     strcpy(states[0].header.value, HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL);
     strcpy(states[0].alternative, HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_ALT);
-    strcpy(states[1].header.name, HTTP_HEADER_CONTENT_ENC);
-    strcpy(states[1].header.value, HTTP_HEADER_CONTENT_ENC_VAL);
 
-    if(!http_verify_response_compliance(&respMetadata, states, 2, err)) {
+    if(!http_verify_response_compliance(&respMetadata, states, 1, err)) {
         return EST_FALSE;
     }
 
