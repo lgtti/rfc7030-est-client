@@ -10,6 +10,7 @@
 
 #define EST_HTTP_PATH_CACERTS               "/.well-known/est/%s/cacerts"
 #define EST_HTTP_PATH_CACERTS_NOLABEL       "/.well-known/est/cacerts"
+#define CACERTS_VERIFY_STATE_NUM 1
 
 /*
 Send a new http request for /cacerts endpoint.
@@ -55,14 +56,18 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
         There variables are used to ignore the check if the header is already ok (performance improvement)
     RFC: 
         The HTTP content-type of "application/pkcs7-mime" is used.  
-        The Simple PKI Response is sent with a Content-Transfer-Encoding of "base64"
+        
+        ---> (The Simple PKI Response is sent with a Content-Transfer-Encoding of "base64")
+            This requirements has been deprecated by RFC 8951 (see 
+            https://github.com/lgtti/rfc7030-est-client/issues/1)
     */
-    VerifyState_t states[1];
+    
+    VerifyState_t states[CACERTS_VERIFY_STATE_NUM];
     memset(states, 0, sizeof(states));
     strcpy(states[0].header.name, HTTP_HEADER_CONTENT_TYPE);
     strcpy(states[0].header.value, HTTP_HEADER_CONTENT_TYPE_VAL);
 
-    if(!http_verify_response_compliance(&respMetadata, states, 1, err)) {
+    if(!http_verify_response_compliance(&respMetadata, states, CACERTS_VERIFY_STATE_NUM, err)) {
         return EST_FALSE;
     }
 

@@ -27,6 +27,8 @@ path segment is present.  The following are three example valid URIs:
 #define EST_HTTP_PATH_SIMPLEREENROLL            "/.well-known/est/%s/simplereenroll"
 #define EST_HTTP_PATH_SIMPLEREENROLL_NOLABEL    "/.well-known/est/simplereenroll"
 
+#define ENROLL_VERIFY_STATE_NUM 1
+
 /*
 Send a new http request for /simpleenroll and /simplereenroll endpoints.
 */
@@ -90,15 +92,17 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     RFC: 
         The HTTP content-type of "application/pkcs7-mime" with an
             smime-type parameter "certs-only" is used, as specified in [RFC5273].
-        The Simple PKI Response is sent with a Content-Transfer-Encoding of "base64
+        ---> (The Simple PKI Response is sent with a Content-Transfer-Encoding of "base64")
+            This requirements has been deprecated by RFC 8951 (see 
+            https://github.com/lgtti/rfc7030-est-client/issues/1)
     */
-    VerifyState_t states[1];
+    VerifyState_t states[ENROLL_VERIFY_STATE_NUM];
     memset(states, 0, sizeof(states));
     strcpy(states[0].header.name, HTTP_HEADER_CONTENT_TYPE);
     strcpy(states[0].header.value, HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL);
     strcpy(states[0].alternative, HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_ALT);
 
-    if(!http_verify_response_compliance(&respMetadata, states, 1, err)) {
+    if(!http_verify_response_compliance(&respMetadata, states, ENROLL_VERIFY_STATE_NUM, err)) {
         return EST_FALSE;
     }
 
@@ -112,7 +116,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     LOG_DEBUG(("body data found %d\n", (int)respMetadata.body_len))
     LOG_DEBUG(("body is retrieved, now parse it as pkcs7\n"))
 
-    // /cacerts MUST return a valid PKCS/ body response. */
+    // /enroll MUST return a valid PKCS7 body response. */
     ESTPKCS7_t *p7 = x509->pkcs7_parse(respMetadata.body, respMetadata.body_len, err);
     if(!p7) {
         est_error_update(err, "Failed to parse http request body in pkcs7 form");
