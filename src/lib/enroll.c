@@ -194,7 +194,8 @@ ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len,
         return NULL;
     }
 
-    
+    LOG_DEBUG(("Try to parse received certificate\n"))
+
     size_t p7certificates_len_found = 0;
     ESTCertificate_t *crt = x509->pkcs7_get_first_certificate(p7, &p7certificates_len_found, err);
 

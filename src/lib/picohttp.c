@@ -228,6 +228,8 @@ void picohttp_send_free(ESTHttp_Ctx_t *ctx, ESTHttp_RespMetadata_t *response_met
 }
 
 void picohttp_free(ESTHttp_Ctx_t *ctx) {
+    LOG_DEBUG(("http pico free\n"))
+
     PicoHttp_Ctx_t *pico_ctx = (PicoHttp_Ctx_t *)ctx;
     free(ctx);
 }
