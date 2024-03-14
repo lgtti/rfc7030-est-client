@@ -199,6 +199,8 @@ ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len,
     size_t p7certificates_len_found = 0;
     ESTCertificate_t *crt = x509->pkcs7_get_first_certificate(p7, &p7certificates_len_found, err);
 
+    LOG_DEBUG(("Found %d certificates\n", p7certificates_len_found))
+
     // Release pkcs7 memory because we only need certificates.
     x509->pkcs7_free(p7);
 
@@ -221,6 +223,8 @@ ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len,
         est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_TOOMANY, 0, "Too many certificates found in PKCS7 response for request certificate");
         return NULL;
     }
+
+    LOG_DEBUG(("Library enroll completed\n"))
 
     return crt;
 }

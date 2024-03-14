@@ -183,10 +183,13 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
             config->csr_ctx, 
             &enroll_output, err)) {
 
+            LOG_DEBUG(("Enroll completed with error\n"))
             oss_free_implicit_ta(&est_opts);
             return EST_FALSE;
         }
     }
+
+    LOG_DEBUG(("EST Operation completed\n"))
 
     oss_free_implicit_ta(&est_opts);
     int len = oss_crt2pem_noterminator((X509 *)enroll_output.enrolled, enrolled, enrolled_len);

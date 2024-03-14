@@ -100,6 +100,8 @@ ESTCertificate_t * x509_pkcs7_get_first_certificate(ESTPKCS7_t *p7, size_t *len,
     PKCS7 *pkcs7 = (PKCS7 *)p7;
 
     STACK_OF(X509) *certs = NULL;
+
+    LOG_DEBUG(("Search for pkcs7 nip certificate content\n"))
     
     // Search for a valid PKCS7 certificate section
     int nid = OBJ_obj2nid(pkcs7->type);
@@ -115,11 +117,15 @@ ESTCertificate_t * x509_pkcs7_get_first_certificate(ESTPKCS7_t *p7, size_t *len,
         return NULL;
     }
 
+    LOG_DEBUG(("Extract number of pkcs7 certificates\n"))
+
     int numcerts = sk_X509_num(certs);
     if(numcerts == 0) {
         // nocertificates found in this PKCS7
         return NULL;
     }
+
+    LOG_DEBUG(("Found pkcs7 %d certificates\n", numcerts))
 
     X509 *cert = sk_X509_value(certs, 0);
     *len = numcerts;
