@@ -30,7 +30,7 @@
 #define EST_HTTP_REQ_HEADERS_NUM 5
 
 /* Max len for the stack allocated buffer used to compose the http request*/
-#define HTTP_REQ_MAX_LEN 2048
+#define HTTP_REQ_MAX_LEN 10000
 
 /* Standard port defined by RFC 7030. */
 #define EST_TCP_PORT 443
