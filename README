@@ -220,6 +220,9 @@ to view the list of input parameters.
 
 6.1.1 Example
 -------------
+First of all, from the http://testrfc7030.com website you must download the server chain dstcax3.pem using the command:
+wget http://testrfc7030.com/dstcax3.pem
+
 With the client you can run three main operations:
 - CACerts
 
@@ -290,7 +293,7 @@ To use all library functions you need to include only one header file
 and this provides to you the access to all low level functions (prefixed with est_xxx) and
 all low level "client" functions (prefixed with est_client_xxx).
 
-** Note: see the src/openssl/openssl_rfc.c file to check how to uswe the low level EST library
+** Note: see the src/openssl/openssl_rfc.c file to check how to use low level EST library
 functions.
 
 6.2.1 With CMake
@@ -322,6 +325,7 @@ all required headers and source files.
 - Set the include directory 
 
     src/lib/include
+    src/third_party/picohttpparser
 
 - Set the src files to link 
 
@@ -332,6 +336,7 @@ all required headers and source files.
     src/lib/est.c
     src/lib/http.c
     src/lib/picohttp.c
+    src/third_party/picohttpparser/picohttpparser.c
 
 To link the selected backend you need to do the same.
 
