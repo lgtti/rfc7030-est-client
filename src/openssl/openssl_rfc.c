@@ -150,6 +150,12 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
     est_opts.use_pop = tls.get_unique != NULL;
     est_opts.tlsInterface = &tls;
     est_opts.x509Interface = &x509;
+
+    if(config->opts.disable_rfc8951) {
+        est_opts.strict8951 = EST_FALSE;
+    } else {
+        est_opts.strict8951 = EST_TRUE;
+    }
     
     if(config->opts.label) {
         strncpy(est_opts.label, config->opts.label, EST_CLIENT_LABEL_LEN);

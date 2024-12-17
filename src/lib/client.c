@@ -61,6 +61,7 @@ static bool_t est_client_enroll_internal(const ESTClient_Options_t *opts,
     // replace explicit TA with the new implicit TA
     auth_opts.chain = cacerts_ctx.cacerts.chain;
     auth_opts.chain_len = cacerts_ctx.cacerts.chain_len;
+    auth_opts.strict8951 = opts->strict8951;
 
     /* We MUST free the old context to reopen a new tls auth channel. Don't free
     the cacerts response because we need to share it to the caller. We will free it 

@@ -27,7 +27,8 @@ path segment is present.  The following are three example valid URIs:
 #define EST_HTTP_PATH_SIMPLEREENROLL            "/.well-known/est/%s/simplereenroll"
 #define EST_HTTP_PATH_SIMPLEREENROLL_NOLABEL    "/.well-known/est/simplereenroll"
 
-#define ENROLL_VERIFY_STATE_NUM 1
+#define ENROLL_VERIFY_STATE_NUM 2
+#define ENROLL_VERIFY_STATE_NUM_RFC8251 1
 
 /*
 Send a new http request for /simpleenroll and /simplereenroll endpoints.
@@ -89,21 +90,44 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     /*
         Check header compliance.
         There variables are used to ignore the check if the header is already ok (performance improvement)
-    RFC: 
-        The HTTP content-type of "application/pkcs7-mime" with an
-            smime-type parameter "certs-only" is used, as specified in [RFC5273].
-        ---> (The Simple PKI Response is sent with a Content-Transfer-Encoding of "base64")
-            This requirements has been deprecated by RFC 8951 (see 
-            https://github.com/lgtti/rfc7030-est-client/issues/1)
     */
-    VerifyState_t states[ENROLL_VERIFY_STATE_NUM];
-    memset(states, 0, sizeof(states));
-    strcpy(states[0].header.name, HTTP_HEADER_CONTENT_TYPE);
-    strcpy(states[0].header.value, HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL);
-    strcpy(states[0].alternative, HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_ALT);
 
-    if(!http_verify_response_compliance(&respMetadata, states, ENROLL_VERIFY_STATE_NUM, err)) {
-        return EST_FALSE;
+    
+
+    if(ctx->options.strict8951) {
+        LOG_DEBUG(("RFC 8951 strict mode enabled with flag=%d\n", ctx->options.strict8951))
+        /*
+        RFC: 
+            The HTTP content-type of "application/pkcs7-mime" with an
+                smime-type parameter "certs-only" is used, as specified in [RFC5273].
+            ---> (The Simple PKI Response is sent with a Content-Transfer-Encoding of "base64")
+                This requirements has been deprecated by RFC 8951 (see 
+                https://github.com/lgtti/rfc7030-est-client/issues/1)
+        */
+        
+        VerifyState_t states[ENROLL_VERIFY_STATE_NUM_RFC8251];
+        memset(states, 0, sizeof(states));
+        strcpy(states[0].header.name, HTTP_HEADER_CONTENT_TYPE);
+        strcpy(states[0].header.value, HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_RFC8951);
+        strcpy(states[0].alternative, HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_ALTRFC8951);
+
+        if(!http_verify_response_compliance(&respMetadata, states, ENROLL_VERIFY_STATE_NUM_RFC8251, err)) {
+            return EST_FALSE;
+        }
+    } else { 
+        LOG_DEBUG(("RFC 8951 strict mode disabled\n"))
+
+        VerifyState_t states[ENROLL_VERIFY_STATE_NUM];
+        memset(states, 0, sizeof(states));
+        strcpy(states[0].header.name, HTTP_HEADER_CONTENT_TYPE);
+        strcpy(states[0].header.value, HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL);
+        strcpy(states[0].alternative, HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_ALT);
+        strcpy(states[1].header.name, HTTP_HEADER_CONTENT_ENC);
+        strcpy(states[1].header.value, HTTP_HEADER_CONTENT_ENC_VAL);
+
+        if(!http_verify_response_compliance(&respMetadata, states, ENROLL_VERIFY_STATE_NUM, err)) {
+            return EST_FALSE;
+        }
     }
 
     /* No body returned and this is an error. Enrollment always returns a valid PKCS7 single-certificate response

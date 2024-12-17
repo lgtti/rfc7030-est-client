@@ -34,6 +34,13 @@ static struct cag_option options[] = {
         .description = "Skip verify of EST Server certificate chain validity - don't use it in production!"
     },
     {
+        .identifier = 'u',
+        .access_letters = "u",
+        .access_name = "use_original_spec",
+        .value_name = NULL,
+        .description = "Set this flag if you want to disable support for RFC 8951"
+    },
+    {
         .identifier = 'l',
         .access_letters = "l",
         .access_name = "label",
@@ -133,6 +140,7 @@ int main(int argc, char *argv[]) {
     const char *host = NULL;
     int port = EST_TCP_PORT;
     bool_t skip_tls_verify = EST_FALSE;
+    bool_t disable_strict_8951 = EST_FALSE;
     const char *label = NULL;
     
     char chain_content[20000];
@@ -206,6 +214,9 @@ int main(int argc, char *argv[]) {
         case 'z':
             output_crt = cag_option_get_value(&context);
             break;
+        case 'u':
+            disable_strict_8951 = EST_FALSE;
+            break;
         case 'h':
             printf("Usage: rfc7030-est-client [OPTIONs] [enroll|renew|cacerts]\n");
             cag_option_print(options, CAG_ARRAY_SIZE(options), stdout);
@@ -264,6 +275,7 @@ int main(int argc, char *argv[]) {
     memset(&rfcConfig, 0, sizeof(rfcConfig));
     rfcConfig.opts.host = host;
     rfcConfig.opts.port = port;
+    rfcConfig.opts.disable_rfc8951 = disable_strict_8951;
 
     if(!skip_tls_verify) {
         rfcConfig.opts.cachain = chain_content;

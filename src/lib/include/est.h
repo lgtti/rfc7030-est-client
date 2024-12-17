@@ -107,6 +107,9 @@ typedef struct ESTClient_Options {
   /* Implementation of callback to compose the csr*/
   est_get_csr_t get_csr;
 
+  /* Enable strict verification of parameters configured int RFC 8951 */
+  bool_t strict8951;
+
 }ESTClient_Options_t;
 
 

@@ -1,10 +1,6 @@
 Library and client implementation of EST Enrollment Protocol RFC 7030 
 https://www.rfc-editor.org/rfc/rfc7030.html
 
-Update 27/12/23: thanks to https://github.com/61131 a first support
-for the RFC 8951 https://datatracker.ietf.org/doc/html/rfc8951 has been
-added.
-
 
 Summary
 -------
@@ -28,6 +24,7 @@ Summary
 9. Custom parameters
 10. Contribution
 11. RFC Requirements
+    11.1 RFC 8951
 
 
 
@@ -565,6 +562,12 @@ OPTIONAL    Regardless of the CSR Attributes Response, clients      IMPLEMENTED
             SHOULD link identity and POP by embedding tls-unique 
             information in the certification request.
 
+11.1 RFC 8951
+------------
+Thanks to https://github.com/61131 a first support
+for the RFC 8951 https://datatracker.ietf.org/doc/html/rfc8951 has been
+added.
+
 MUST        RFC-8951 This document updates [RFC7030] to require     IMPLEMENTED
             the POST request and payload response of all 
             endpoints using base64 encoding, as specified in 
@@ -574,3 +577,6 @@ MUST        RFC-8951 This document updates [RFC7030] to require     IMPLEMENTED
             This format is to be used regardless of any 
             Content-Transfer-Encoding header, and 
             any value in such a header MUST be ignored.
+
+            * New client flag (propagated in the EST library in option structure) 
+              has been add to skip this RFC implementation.

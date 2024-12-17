@@ -310,7 +310,8 @@ static ESTAuthData_t auth = {
 
 static ESTClient_Options_t opts = {
     .chain = (ESTCertificate_t **)&cachain,
-    .chain_len = sizeof(cachain)
+    .chain_len = sizeof(cachain),
+    .strict8951 = EST_TRUE,
 };
 
 static int32_t test_tls_recv( NetworkContext_t * pNetworkContext, void * pBuffer, size_t bytesToRecv ) {
@@ -580,8 +581,11 @@ static MunitResult test_enroll_missing_header(const MunitParameter params[], voi
     net_ctx.tls_recv = (const char **)enroll_missing_header_tls_recv;
     mock_config.test_tls_ctx.pNetworkContext = (NetworkContext_t *)&net_ctx;
 
+    ESTClient_Options_t optsMod = opts;
+    optsMod.strict8951 = EST_FALSE;
+
     ESTError_t err;    
-    ESTClient_Ctx_t *ctx = est_initialize(&opts, &err);
+    ESTClient_Ctx_t *ctx = est_initialize(&optsMod, &err);
     est_connect(ctx, "host", 443, &auth, &err);
 
     ESTCaCerts_Info_t output;
@@ -603,8 +607,11 @@ static MunitResult test_enroll_invalid_smime(const MunitParameter params[], void
     net_ctx.tls_recv = (const char **)enroll_invalid_smime_tls_recv;
     mock_config.test_tls_ctx.pNetworkContext = (NetworkContext_t *)&net_ctx;
 
-    ESTError_t err;    
-    ESTClient_Ctx_t *ctx = est_initialize(&opts, &err);
+    ESTClient_Options_t optsMod = opts;
+    optsMod.strict8951 = EST_TRUE;
+
+    ESTError_t err;
+    ESTClient_Ctx_t *ctx = est_initialize(&optsMod, &err);
     est_connect(ctx, "host", 443, &auth, &err);
 
     ESTCaCerts_Info_t output;
@@ -628,7 +635,7 @@ static MunitTest test_suite_tests[] = {
   { (char*) "/est/lib/test_cacerts_ok_with_label", test_cacerts_ok_with_label, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/lib/test_cacerts_failed_verify", test_cacerts_failed_verify, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/lib/test_cacerts_verify_ok", test_cacerts_verify_ok, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-  { (char*) "/est/lib/test_cacerts_incomplete_p7", test_cacerts_incomplete_p7, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+  { (char*) "/est/lib/test_cacerts_incomplete_p7", test_cacerts_incomplete_p7, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL }, 
   { (char*) "/est/lib/test_enroll_ok", test_enroll_ok, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/lib/test_enroll_retry_after_header", test_enroll_retry_after_header, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/lib/test_enroll_missing_header", test_enroll_missing_header, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },

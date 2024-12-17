@@ -6,13 +6,15 @@
 #define HTTP_GET    0x1
 #define HTTP_POST   0x2
 
-#define HTTP_HEADER_CONTENT_TYPE                    "Content-Type"
-#define HTTP_HEADER_CONTENT_ENC                     "Content-Transfer-Encoding"
-#define HTTP_HEADER_RETRY                           "Retry-After"
-#define HTTP_HEADER_CONTENT_TYPE_VAL                "application/pkcs7-mime"
-#define HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL         "application/pkcs7-mime; smime-type=certs-only"
-#define HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_ALT     "application/pkcs7-mime;smime-type=certs-only"
-#define HTTP_HEADER_CONTENT_ENC_VAL                 "base64"
+#define HTTP_HEADER_CONTENT_TYPE                             "Content-Type"
+#define HTTP_HEADER_CONTENT_ENC                              "Content-Transfer-Encoding"
+#define HTTP_HEADER_RETRY                                    "Retry-After"
+#define HTTP_HEADER_CONTENT_TYPE_VAL                         "application/pkcs7-mime"
+#define HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL                  "application/pkcs7-mime"
+#define HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_ALT              "application/pkcs7-mime"
+#define HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_RFC8951          "application/pkcs7-mime; smime-type=certs-only"
+#define HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_ALTRFC8951       "application/pkcs7-mime;smime-type=certs-only"
+#define HTTP_HEADER_CONTENT_ENC_VAL                          "base64"
 
 typedef char HTTP_VERIFY_HEADER_ENUM;
 #define HTTP_VERIFY_HEADER_NOTFOUND 0

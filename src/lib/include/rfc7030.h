@@ -19,6 +19,7 @@ typedef struct RFC7030_Options {
     const char *host;
     const char *label;
     const char *cachain;
+    bool_t disable_rfc8951;
 }RFC7030_Options_t;
 
 typedef struct CstCtx CsrCtx_t;
