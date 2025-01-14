@@ -3,6 +3,7 @@
 
 #include "rfc7030.h"
 #include "cargs.h"
+#include "custom_config.h"
 
 static struct cag_option options[] = {
     {
@@ -80,12 +81,6 @@ static struct cag_option options[] = {
         .description = "Authentication for EST Server connection using http basic auth. Value should be username:password (but password can be empty)"
     },
     {
-        .identifier = 'o',
-        .access_name = "output",
-        .value_name = "PEM FILENAME PATH",
-        .description = "Filename and path used to save the output of the command"
-    },
-    {
         .identifier = 'f',
         .access_name = "output-ca",
         .value_name = "PEM FILENAME PATH",
@@ -157,7 +152,6 @@ int main(int argc, char *argv[]) {
     const char *p12_filename = NULL;
     const char *p12_password = NULL;
     const char *basic_auth = NULL;
-    const char *output = NULL;
     const char *output_ca = NULL;
     const char *output_crt = NULL;
 
@@ -205,9 +199,6 @@ int main(int argc, char *argv[]) {
         case 'b':
             basic_auth = cag_option_get_value(&context);
             break;
-        case 'o':
-            output = cag_option_get_value(&context);
-            break;
         case 'f':
             output_ca = cag_option_get_value(&context);
             break;
@@ -215,7 +206,7 @@ int main(int argc, char *argv[]) {
             output_crt = cag_option_get_value(&context);
             break;
         case 'u':
-            disable_strict_8951 = EST_FALSE;
+            disable_strict_8951 = EST_TRUE;
             break;
         case 'h':
             printf("Usage: rfc7030-est-client [OPTIONs] [enroll|renew|cacerts]\n");
@@ -254,9 +245,6 @@ int main(int argc, char *argv[]) {
     ESTAuthData_t auth;
     memset(&auth, 0, sizeof(auth));
 
-    char cacerts_pem[100000];
-    size_t cacerts_pem_len = 100000;
-
     if(host == NULL) {
         LOG_ERROR(("Missing host parameter\n"));
         failed = EST_TRUE;
@@ -282,6 +270,8 @@ int main(int argc, char *argv[]) {
     }
 
     rfcConfig.opts.label = label;
+
+    char cacerts_pem[CLIENT_CACERT_MAX_LEN];
 
     if(enroll || renew) { 
         if(!csr_filename) {
@@ -320,15 +310,15 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        char enrolled[5000];
+        char enrolled[CLIENT_ENROLLED_MAX_LEN];
 
         if(renew) {
-            if(!rfc7030_renew_certificate(&rfcConfig, cacerts_pem, cacerts_pem_len, enrolled, 5000, &err)) {
+            if(!rfc7030_renew_certificate(&rfcConfig, cacerts_pem, CLIENT_CACERT_MAX_LEN, enrolled, CLIENT_ENROLLED_MAX_LEN, &err)) {
                 LOG_ERROR(("Renew failed (code=%d,native=%d,subsystem=%d): %s\n", err.code, err.native, err.subsystem, err.human));
                 return EXIT_FAILURE;
             }
         } else {
-            if(!rfc7030_request_certificate(&rfcConfig, cacerts_pem, cacerts_pem_len, enrolled, 5000, &err)) {
+            if(!rfc7030_request_certificate(&rfcConfig, cacerts_pem, CLIENT_CACERT_MAX_LEN, enrolled, CLIENT_ENROLLED_MAX_LEN, &err)) {
                 LOG_ERROR(("Enrollment failed (code=%d,native=%d,subsystem=%d): %s\n", err.code, err.native, err.subsystem, err.human));
                 return EXIT_FAILURE;
             }
@@ -339,15 +329,15 @@ int main(int argc, char *argv[]) {
         LOG_INFO(("Enrolled certificate:\n"));
         LOG_INFO(("%s\n", enrolled));
 
-        if(output || output_ca) {
-            if(!write_file(output ? output : output_ca, "wt", cacerts_pem)) {
+        if(output_ca) {
+            if(!write_file(output_ca, "wt", cacerts_pem)) {
                 LOG_ERROR(("Failed to write output\n"));
                 return EXIT_FAILURE;
             }
         }
 
-        if(output || output_crt) {
-            if(!write_file(output ? output : output_crt, "a+", enrolled)) {
+        if(output_crt) {
+            if(!write_file(output_crt, "a+", enrolled)) {
                 LOG_ERROR(("Failed to write output\n"));
                 return EXIT_FAILURE;
             }
@@ -355,7 +345,7 @@ int main(int argc, char *argv[]) {
     }
 
     if(cacerts) {
-        if(!rfc7030_request_cachain(&rfcConfig.opts, cacerts_pem, cacerts_pem_len, &err)) {
+        if(!rfc7030_request_cachain(&rfcConfig.opts, cacerts_pem, CLIENT_CACERT_MAX_LEN, &err)) {
             LOG_ERROR(("CAcerts failed (code=%d,native=%d,subsystem=%d): %s\n", err.code, err.native, err.subsystem, err.human));
             return EXIT_FAILURE;
         }
@@ -363,8 +353,8 @@ int main(int argc, char *argv[]) {
         LOG_INFO(("CACerts:\n"));
         LOG_INFO(("%s\n", cacerts_pem));
 
-        if(output || output_ca) {
-            if(!write_file(output ? output : output_ca, "wt", cacerts_pem)) {
+        if(output_ca) {
+            if(!write_file(output_ca, "wt", cacerts_pem)) {
                 LOG_ERROR(("Failed to write output\n"));
                 return EXIT_FAILURE;
             }

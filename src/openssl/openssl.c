@@ -95,7 +95,13 @@ void oss_free_implicit_ta(ESTClient_Options_t *opts) {
 int oss_crt2pem_noterminator(X509 *crt, char *pem, size_t pem_len) {
     BIO *mem = BIO_new(BIO_s_mem());
     PEM_write_bio_X509(mem, crt);
-    int num = BIO_read(mem, pem, pem_len);
+    
+    // get buffer len
+    BUF_MEM *bptr;
+    BIO_get_mem_ptr(mem, &bptr);
+    int length = bptr->length;
+
+    int num = BIO_read(mem, pem, length);
     BIO_free(mem);
     return num;
 }

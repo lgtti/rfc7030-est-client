@@ -628,7 +628,7 @@ static MunitResult test_enroll_invalid_smime(const MunitParameter params[], void
 }
 
 static MunitTest test_suite_tests[] = {
-  { (char*) "/est/lib/test_connect_ko", test_init, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+  { (char*) "/est/lib/test_init", test_init, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/lib/test_connect_ko", test_connect_ko, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/lib/test_connect_ok", test_connect_ok, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/lib/test_cacerts_ok", test_cacerts_ok, before_each, NULL, MUNIT_TEST_OPTION_NONE, NULL },
