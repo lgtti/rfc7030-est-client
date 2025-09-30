@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, feature/#7-integration-tests ]
   pull_request:
     branches: [ main ]
 
