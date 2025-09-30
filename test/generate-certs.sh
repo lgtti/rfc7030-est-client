@@ -5,7 +5,9 @@
 
 set -e
 
-CERT_DIR="/home/lorenzo/personal/rfc7030-est-client/test/config"
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CERT_DIR="$SCRIPT_DIR/config"
 mkdir -p "$CERT_DIR"
 
 cd "$CERT_DIR"
