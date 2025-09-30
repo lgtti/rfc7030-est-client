@@ -1,0 +1,58 @@
+name: Integration Tests Only
+
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly on Monday at 2 AM UTC
+  push:
+    paths:
+      - 'test/**'
+      - 'src/integration/**'
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          libssl-dev \
+          libcurl4-openssl-dev \
+          pkg-config \
+          git \
+          docker.io
+        sudo systemctl start docker
+        sudo usermod -aG docker $USER
+        
+    - name: Build integration tests
+      run: |
+        cmake -Ssrc -Bbuild \
+          -DBUILD_CLONE_SUBMODULES=ON \
+          -DUSE_OPENSSL=ON
+        cd build
+        make -j$(nproc)
+        
+    - name: Run automated integration tests
+      run: |
+        cd test
+        chmod +x run-integration-tests.sh
+        ./run-integration-tests.sh
+        
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          test/logs/
+          build/bin/
+        retention-days: 7

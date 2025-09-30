@@ -1,0 +1,21 @@
+---
+name: Q&A
+about: Ask a question or get help
+title: '[Q&A] '
+labels: ['question', 'help wanted']
+assignees: ''
+---
+
+## Question
+What would you like to know?
+
+## Environment
+- OS: [e.g. Ubuntu 20.04, macOS 12.0, Windows 10]
+- Compiler: [e.g. GCC 9.4, Clang 13.0]
+- OpenSSL version: [e.g. 1.1.1f]
+
+## What I've tried
+Describe what you've already tried or researched.
+
+## Additional Context
+Any other relevant information or code snippets.

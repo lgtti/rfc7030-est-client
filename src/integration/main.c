@@ -58,7 +58,7 @@ static MunitResult test_client_cacerts(const MunitParameter params[], void* data
     memset(&err, 0, sizeof(err));
 
     RFC7030_Options_t opts;
-    opts.host = "testrfc7030.com";
+    opts.host = "localhost";
     opts.port = 8443;
     opts.label = NULL;
     opts.cachain = cacerts;
@@ -89,7 +89,7 @@ static MunitResult test_client_cacerts_invalid_est_ta(const MunitParameter param
     memset(&err, 0, sizeof(err));
 
     RFC7030_Options_t opts;
-    opts.host = "testrfc7030.com";
+    opts.host = "localhost";
     opts.port = 8443;
     opts.label = NULL;
     opts.cachain = cacerts;
@@ -120,7 +120,7 @@ static MunitResult test_client_enroll_invalid_est_ta(const MunitParameter params
 
     RFC7030_Enroll_Options_t cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.opts.host = "testrfc7030.com";
+    cfg.opts.host = "localhost";
     cfg.opts.port = 8443;
     cfg.opts.label = NULL;
     cfg.opts.cachain = cacerts;
@@ -166,7 +166,7 @@ static MunitResult test_client_enroll_crt(const MunitParameter params[], void* d
     
     RFC7030_Enroll_Options_t cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.opts.host = "testrfc7030.com";
+    cfg.opts.host = "localhost";
     cfg.opts.port = 9443;
     cfg.opts.label = NULL;
     cfg.opts.cachain = cacerts;
@@ -213,7 +213,7 @@ static MunitResult test_client_enroll_basic(const MunitParameter params[], void*
     
     RFC7030_Enroll_Options_t cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.opts.host = "testrfc7030.com";
+    cfg.opts.host = "localhost";
     cfg.opts.port = 8443;
     cfg.opts.label = NULL;
     cfg.opts.cachain = cacerts;
@@ -248,6 +248,11 @@ static MunitResult test_client_renew(const MunitParameter params[], void* data) 
     strcat(res, "/csr.pem");
     char csr[5000];
     size_t csr_len = read_file(res, "rt", csr);
+
+    strcpy(res, TEST_RESOURCE_FOLDER);
+    strcat(res, "/client-renewal.p12");
+    char p12[5000];
+    size_t p12_len = read_file(res, "rb", p12);
     
     char implicit_ta[5000];
     size_t implicit_ta_len = 5000;
@@ -262,14 +267,15 @@ static MunitResult test_client_renew(const MunitParameter params[], void* data) 
     
     RFC7030_Enroll_Options_t cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.opts.host = "testrfc7030.com";
-    cfg.opts.port = 8443;
+    cfg.opts.host = "localhost";
+    cfg.opts.port = 9443;  // Use mTLS port for renewal
     cfg.opts.label = NULL;
     cfg.opts.cachain = cacerts;
     cfg.csr_ctx = (CsrCtx_t *)csr;
 
+    // For renewal, we need mTLS authentication with existing certificate
     const RFC7030_Subsystem_Config_t *implCfg = rfc7030_get_config();
-    implCfg->parse_basicauth("estuser:estpwd", &cfg.auth, &err);
+    implCfg->parse_p12(p12, p12_len, "testpass", &cfg.auth, &err);
 
     munit_assert_true(rfc7030_renew_certificate(&cfg, 
         implicit_ta, 
@@ -313,7 +319,7 @@ static MunitResult test_client_enroll_basic_pop(const MunitParameter params[], v
     
     RFC7030_Enroll_Options_t cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.opts.host = "testrfc7030.com";
+    cfg.opts.host = "localhost";
     cfg.opts.port = 8443;
     cfg.opts.label = NULL;
     cfg.opts.cachain = cacerts;

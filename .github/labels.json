@@ -1,0 +1,62 @@
+[
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "Something isn't working"
+  },
+  {
+    "name": "enhancement",
+    "color": "a2eeef",
+    "description": "New feature or request"
+  },
+  {
+    "name": "documentation",
+    "color": "0075ca",
+    "description": "Improvements or additions to documentation"
+  },
+  {
+    "name": "good first issue",
+    "color": "7057ff",
+    "description": "Good for newcomers"
+  },
+  {
+    "name": "help wanted",
+    "color": "008672",
+    "description": "Extra attention is needed"
+  },
+  {
+    "name": "backend",
+    "color": "f9d0c4",
+    "description": "TLS/X.509 backend related"
+  },
+  {
+    "name": "integration-tests",
+    "color": "0e8a16",
+    "description": "Integration testing related"
+  },
+  {
+    "name": "security",
+    "color": "b60205",
+    "description": "Security related issue"
+  },
+  {
+    "name": "rfc7030",
+    "color": "1d76db",
+    "description": "RFC 7030 compliance related"
+  },
+  {
+    "name": "docker",
+    "color": "2496ed",
+    "description": "Docker related"
+  },
+  {
+    "name": "cmake",
+    "color": "064f8c",
+    "description": "Build system related"
+  },
+  {
+    "name": "openssl",
+    "color": "721c24",
+    "description": "OpenSSL backend related"
+  }
+]

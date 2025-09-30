@@ -1,0 +1,96 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          libssl-dev \
+          libcurl4-openssl-dev \
+          pkg-config \
+          git
+          
+    - name: Configure CMake
+      run: |
+        cmake -Ssrc -Bbuild \
+          -DBUILD_CLONE_SUBMODULES=ON \
+          -DUSE_OPENSSL=ON
+          
+    - name: Build project
+      run: |
+        cd build
+        make -j$(nproc)
+        
+    - name: Run unit tests
+      run: |
+        cd build
+        ./bin/rfc7030-est-client-tests
+        
+    - name: Setup Docker for integration tests
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y docker.io
+        sudo systemctl start docker
+        sudo usermod -aG docker $USER
+        
+    - name: Generate test certificates
+      run: |
+        cd test
+        chmod +x generate-certs.sh
+        ./generate-certs.sh
+        
+    - name: Build EST server Docker image
+      run: |
+        cd test
+        docker-compose build --no-cache
+        
+    - name: Start EST server
+      run: |
+        cd test
+        docker-compose up -d
+        sleep 30  # Wait for server to be ready
+        
+    - name: Wait for EST server to be ready
+      run: |
+        cd test
+        timeout 60 bash -c '
+          while ! docker-compose logs est-server 2>&1 | grep -q "EST server is listening"; do
+            sleep 2
+          done
+        '
+        
+    - name: Run integration tests
+      run: |
+        cd build/bin
+        ./rfc7030-est-integration-tests
+        
+    - name: Show EST server logs
+      if: always()
+      run: |
+        cd test
+        echo "=== EST Server Logs ==="
+        docker-compose logs est-server
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        cd test
+        docker-compose down
+        docker system prune -f
