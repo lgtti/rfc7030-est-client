@@ -71,11 +71,25 @@ jobs:
     - name: Wait for EST server to be ready
       run: |
         cd test
-        timeout 60 bash -c '
-          while ! docker-compose logs est-server 2>&1 | grep -q "EST server is listening"; do
-            sleep 2
-          done
-        '
+        echo "Waiting for EST server to start..."
+        sleep 10  # Give server time to start
+        
+        # Check if server is responding with curl
+        echo "Checking EST server health..."
+        for i in {1..15}; do
+          if curl -s -k https://localhost:8443/.well-known/est/cacerts > /dev/null 2>&1; then
+            echo "✅ EST server is responding on port 8443"
+            break
+          fi
+          if [ $i -eq 15 ]; then
+            echo "❌ EST server is not responding after 15 attempts"
+            echo "Server logs:"
+            docker-compose logs est-server | tail -20
+            exit 1
+          fi
+          echo "Server not ready yet, attempt $i/15..."
+          sleep 2
+        done
         
     - name: Run integration tests
       run: |
