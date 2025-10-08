@@ -78,11 +78,11 @@ jobs:
         echo "Checking EST server health..."
         for i in {1..15}; do
           if curl -s -k https://localhost:8443/.well-known/est/cacerts > /dev/null 2>&1; then
-            echo "✅ EST server is responding on port 8443"
+            echo "EST server is responding on port 8443"
             break
           fi
           if [ $i -eq 15 ]; then
-            echo "❌ EST server is not responding after 15 attempts"
+            echo "EST server is not responding after 15 attempts"
             echo "Server logs:"
             docker-compose logs est-server | tail -20
             exit 1
@@ -94,6 +94,7 @@ jobs:
     - name: Run integration tests
       run: |
         cd build/bin
+        export RFC7030_TEST_RESOURCES_FOLDER="../../test/config"
         ./rfc7030-est-integration-tests
         
     - name: Show EST server logs
