@@ -17,8 +17,8 @@ jobs:
         
     - name: Create source code asset
       run: |
-        zip -r rfc7030-est-client-${GITHUB_REF_NAME}-src.zip src include CMakeLists.txt README.md LICENSE
-        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz src include CMakeLists.txt README.md LICENSE
+        zip -r rfc7030-est-client-${GITHUB_REF_NAME}-src.zip src test AUTHORS README.md LICENSE
+        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz src test AUTHORS README.md LICENSE
 
     - name: Upload File zip
       uses: actions/upload-artifact@v4
@@ -34,8 +34,8 @@ jobs:
         path: rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz
         retention-days: 1
 
-  ubuntu_18_04:
-    runs-on: ubuntu-18.04
+  ubuntu_20_04:
+    runs-on: ubuntu-20.04
     
     steps:
     - name: Checkout code
@@ -76,21 +76,21 @@ jobs:
     - name: Upload File zip
       uses: actions/upload-artifact@v4
       with:
-        name: zip-ubuntu-18.04
-        path: rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip
+        name: zip-ubuntu-20.04
+        path: rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.zip
         retention-days: 1
 
     - name: Upload File tar.gz
       uses: actions/upload-artifact@v4
       with:
-        name: tar-ubuntu-18.04
-        path: rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz
+        name: tar-ubuntu-20.04
+        path: rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.tar.gz
         retention-days: 1
 
   release:
     runs-on: ubuntu-latest
     needs: 
-    - ubuntu_18_04
+    - ubuntu_20_04
     - src
 
     steps:
@@ -106,17 +106,17 @@ jobs:
         name: tar-src
         path: ./rfc7030-est-client-${GITHUB_REF_NAME}-src.tar
 
-    - name: Download artifact zip ubuntu-18.04
+    - name: Download artifact zip ubuntu-20.04
       uses: actions/download-artifact@v4
       with:
         name: zip-src
-        path: ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip
+        path: ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.zip
 
-    - name: Download artifact tar ubuntu-18.04
+    - name: Download artifact tar ubuntu-20.04
       uses: actions/download-artifact@v4
       with:
         name: tar-src
-        path: ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz
+        path: ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.tar.gz
 
     - name: Release
       uses: softprops/action-gh-release@v2
@@ -126,5 +126,5 @@ jobs:
         files: |
           ./rfc7030-est-client-${GITHUB_REF_NAME}-src.zip
           ./rfc7030-est-client-${GITHUB_REF_NAME}-src.tar
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.zip
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.tar.gz
