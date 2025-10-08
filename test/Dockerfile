@@ -1,5 +1,5 @@
 # Dockerfile for Cisco libest EST Server for Integration Testing
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 # Set maintainer
 LABEL maintainer="EST Integration Test"
