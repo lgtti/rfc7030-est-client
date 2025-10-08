@@ -21,14 +21,14 @@ jobs:
         tar -czf rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz src include CMakeLists.txt README.md LICENSE
 
     - name: Upload File zip
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: zip-src
         path: rfc7030-est-client-${GITHUB_REF_NAME}-src.zip
         retention-days: 1
 
     - name: Upload File tar.gz
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: tar-src
         path: rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz
@@ -74,14 +74,14 @@ jobs:
         tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz build/bin/rfc-est-client
 
     - name: Upload File zip
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: zip-ubuntu-18.04
         path: rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip
         retention-days: 1
 
     - name: Upload File tar.gz
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: tar-ubuntu-18.04
         path: rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz
@@ -89,6 +89,9 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
+    needs: 
+    - ubuntu_18_04
+    - src
 
     steps:
     - name: Download artifact zip src
