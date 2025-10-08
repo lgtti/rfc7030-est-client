@@ -27,8 +27,8 @@ openssl req -new -key server-key.pem -out server.csr -subj "/C=US/ST=CA/L=San Fr
 # Generate server certificate signed by CA
 openssl x509 -req -days 365 -in server.csr -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem
 
-# Clean up
-rm server.csr
+# Generate pre enrollment reusing same certificate of the server (simplest way)
+openssl pkcs12 -export -out preenrollment.p12 -inkey server-key.pem -in server-cert.pem -password pass:12345
 
 echo "Certificates generated successfully in $CERT_DIR"
 echo "Files created:"

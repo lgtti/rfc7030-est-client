@@ -53,48 +53,37 @@ RUN mkdir -p /etc/est/certs
 # Copy CA configuration files to config directory
 COPY config/ca.conf /etc/est/config/
 
+# Copy our custom certificates
+COPY config/ca-cert.pem /etc/est/config/
+COPY config/server-cert.pem /etc/est/config/
+COPY config/server-key.pem /etc/est/config/
+COPY config/ca-key.pem /etc/est/config/
+COPY config/ca.conf /etc/est/config/
+COPY config/server.csr /etc/est/config/
+COPY config/preenrollment.p12 /etc/est/config/
+
 # Copy CA database initialization script
 COPY init-ca-database.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/init-ca-database.sh
 
 # Create startup script for TLS server (port 8443)
-RUN echo '#!/bin/bash\n\
-# Set environment variables\n\
-export EST_CACERTS_RESP=/etc/est/config/cacerts.pem\n\
-export EST_TRUSTED_CERTS=/etc/est/config/ca-cert.pem\n\
-export EST_OPENSSL_CACONFIG=/etc/est/config/ca.conf\n\
-# Start EST server with automatic enrollment (no -m option)\n\
-estserver -p 8443 -c /etc/est/config/server-cert.pem -k /etc/est/config/server-key.pem\n\
-' > /usr/local/bin/start-est-server-tls.sh && \
-    chmod +x /usr/local/bin/start-est-server-tls.sh
+COPY tls-server.sh /usr/local/bin/start-est-server-tls.sh
+RUN chmod +x /usr/local/bin/start-est-server-tls.sh
 
 # Create startup script for mTLS server (port 9443)
-RUN echo '#!/bin/bash\n\
-# Set environment variables\n\
-export EST_CACERTS_RESP=/etc/est/config/cacerts.pem\n\
-export EST_TRUSTED_CERTS=/etc/est/config/ca-cert.pem\n\
-export EST_OPENSSL_CACONFIG=/etc/est/config/ca.conf\n\
-# Start EST server with mTLS (disable HTTP auth, require TLS client auth)\n\
-estserver -p 9443 -c /etc/est/config/server-cert.pem -k /etc/est/config/server-key.pem -n\n\
-' > /usr/local/bin/start-est-server-mtls.sh && \
-    chmod +x /usr/local/bin/start-est-server-mtls.sh
+COPY mtls-server.sh /usr/local/bin/start-est-server-mtls.sh
+RUN chmod +x /usr/local/bin/start-est-server-mtls.sh
+
+# Create startup script for TLS POP server (port 10443)
+COPY pop-tls-server.sh /usr/local/bin/start-est-server-pop-tls.sh
+RUN chmod +x /usr/local/bin/start-est-server-pop-tls.sh
 
 # Create main startup script that runs both servers
-RUN echo '#!/bin/bash\n\
-# Initialize CA database if needed\n\
-/usr/local/bin/init-ca-database.sh\n\
-echo "Starting EST servers..."\n\
-echo "Starting TLS server on port 8443..."\n\
-/usr/local/bin/start-est-server-tls.sh &\n\
-echo "Starting mTLS server on port 9443..."\n\
-/usr/local/bin/start-est-server-mtls.sh &\n\
-echo "Both servers started. Waiting..."\n\
-wait\n\
-' > /usr/local/bin/start-est-server.sh && \
-    chmod +x /usr/local/bin/start-est-server.sh
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
 # Expose EST server ports
-EXPOSE 8443 9443
+EXPOSE 8443 9443 10443
 
 # Set default command
-CMD ["/usr/local/bin/start-est-server.sh"]
+CMD ["/usr/local/bin/start.sh"]

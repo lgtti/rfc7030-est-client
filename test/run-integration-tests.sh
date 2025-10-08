@@ -116,6 +116,7 @@ print_status "Running integration tests..."
 echo "=================================================="
 
 cd ../build/bin
+export RFC7030_TEST_RESOURCES_FOLDER="../../test/config"
 ./rfc7030-est-integration-tests
 
 TEST_EXIT_CODE=$?

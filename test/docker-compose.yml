@@ -9,6 +9,7 @@ services:
     ports:
       - "8443:8443"  # TLS port
       - "9443:9443"  # mTLS port
+      - "10443:10443"  # mTLS port
     volumes:
       - ./config:/etc/est/config:ro  # Config files (read-only)
       - ca-database:/etc/est/database  # CA database (persistent)

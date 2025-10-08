@@ -4,9 +4,12 @@
 
 #include "rfc7030.h"
 
-#ifndef TEST_RESOURCE_FOLDER 
-#define TEST_RESOURCE_FOLDER "res"
+#ifdef TEST_RESOURCE_FOLDER
+#undef TEST_RESOURCE_FOLDER
 #endif
+
+#define TEST_RESOURCE_FOLDER "RFC7030_TEST_RESOURCES_FOLDER"
+#define EXPLICIT_TA_FILENAME "/ca-cert.pem"
 
 ESTCertificate_t * pf2crt(const char *name);
 ESTCertificate_t * pem2crt(const char *pem);
@@ -42,14 +45,17 @@ static MunitResult test_client_cacerts(const MunitParameter params[], void* data
     rfc7030_init();
 
     char res[1024];
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
+    strcat(res, EXPLICIT_TA_FILENAME);
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/rfc_cacerts.pem");
+    LOG_INFO(("Using test folder:\n%s\n", res));
+
     char cacerts[20000];
     size_t cacerts_len = read_file(res, "rt", cacerts);
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/rfc_implicit.pem");
+    LOG_INFO(("Using cacerts:\n%s\n", cacerts));
+
+    
 
     char implicit_ta[20000];
     size_t implicit_ta_len = 20000;
@@ -63,7 +69,9 @@ static MunitResult test_client_cacerts(const MunitParameter params[], void* data
     opts.label = NULL;
     opts.cachain = cacerts;
 
-    munit_assert_true(rfc7030_request_cachain(&opts, implicit_ta, implicit_ta_len, &err));
+    bool_t result = rfc7030_request_cachain(&opts, implicit_ta, implicit_ta_len, &err);
+
+    munit_assert_true(result);
     munit_assert_true(crt_equals(pem2crt(implicit_ta), pf2crt(res)));
 
     return MUNIT_OK;
@@ -73,14 +81,12 @@ static MunitResult test_client_cacerts_invalid_est_ta(const MunitParameter param
     rfc7030_init();
 
     char res[1024];
+    // invalid EST TA
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
+    strcat(res, "/server-cert.pem");
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/rfc_cacerts_invalid.pem");
     char cacerts[20000];
     size_t cacerts_len = read_file(res, "rt", cacerts);
-
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/rfc_implicit.pem");
 
     char implicit_ta[20000];
     size_t implicit_ta_len = 20000;
@@ -103,14 +109,16 @@ static MunitResult test_client_enroll_invalid_est_ta(const MunitParameter params
     rfc7030_init();
 
     char res[1024];
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/rfc_cacerts_invalid.pem");
+    strcat(res, EXPLICIT_TA_FILENAME);
     char cacerts[20000];
     size_t cacerts_len = read_file(res, "rt", cacerts);
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/rfc_implicit.pem");
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
+    strcat(res, "/server.csr");
+    char csr[5000];
+    size_t csr_len = read_file(res, "rt", csr);
 
     char implicit_ta[20000];
     size_t implicit_ta_len = 20000;
@@ -124,6 +132,8 @@ static MunitResult test_client_enroll_invalid_est_ta(const MunitParameter params
     cfg.opts.port = 8443;
     cfg.opts.label = NULL;
     cfg.opts.cachain = cacerts;
+    cfg.auth.type = EST_AUTH_TYPE_NONE;
+    cfg.csr_ctx = (CsrCtx_t *)csr;
 
     munit_assert_false(rfc7030_request_certificate(&cfg, 
         implicit_ta, 
@@ -140,17 +150,17 @@ static MunitResult test_client_enroll_crt(const MunitParameter params[], void* d
 
     char res[1024];
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/rfc_cacerts.pem");
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
+    strcat(res, EXPLICIT_TA_FILENAME);
     char cacerts[5000];
     size_t cacerts_len = read_file(res, "rt", cacerts);
     
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/csr.pem");
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
+    strcat(res, "/server.csr");
     char csr[5000];
     size_t csr_len = read_file(res, "rt", csr);
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
     strcat(res, "/preenrollment.p12");
     char p12[5000];
     size_t p12_len = read_file(res, "rb", p12);
@@ -192,13 +202,13 @@ static MunitResult test_client_enroll_basic(const MunitParameter params[], void*
 
     char res[1024];
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/rfc_cacerts.pem");
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
+    strcat(res, EXPLICIT_TA_FILENAME);
     char cacerts[5000];
     size_t cacerts_len = read_file(res, "rt", cacerts);
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/csr.pem");
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
+    strcat(res, "/server.csr");
     char csr[5000];
     size_t csr_len = read_file(res, "rt", csr);
     
@@ -239,18 +249,18 @@ static MunitResult test_client_renew(const MunitParameter params[], void* data) 
 
     char res[1024];
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/rfc_cacerts.pem");
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
+    strcat(res, EXPLICIT_TA_FILENAME);
     char cacerts[5000];
     size_t cacerts_len = read_file(res, "rt", cacerts);
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/csr.pem");
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
+    strcat(res, "/server.csr");
     char csr[5000];
     size_t csr_len = read_file(res, "rt", csr);
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/client-renewal.p12");
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
+    strcat(res, "/preenrollment.p12");
     char p12[5000];
     size_t p12_len = read_file(res, "rb", p12);
     
@@ -275,7 +285,7 @@ static MunitResult test_client_renew(const MunitParameter params[], void* data) 
 
     // For renewal, we need mTLS authentication with existing certificate
     const RFC7030_Subsystem_Config_t *implCfg = rfc7030_get_config();
-    implCfg->parse_p12(p12, p12_len, "testpass", &cfg.auth, &err);
+    implCfg->parse_p12(p12, p12_len, "12345", &cfg.auth, &err);
 
     munit_assert_true(rfc7030_renew_certificate(&cfg, 
         implicit_ta, 
@@ -294,19 +304,14 @@ static MunitResult test_client_enroll_basic_pop(const MunitParameter params[], v
 
     char res[1024];
 
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/rfc_cacerts.pem");
+    strcpy(res, getenv(TEST_RESOURCE_FOLDER));
+    strcat(res, EXPLICIT_TA_FILENAME);
     char cacerts[5000];
     size_t cacerts_len = read_file(res, "rt", cacerts);
 
-    char csr_ctx[5000];
-    strcpy(csr_ctx, TEST_RESOURCE_FOLDER);
-    strcat(csr_ctx, "/eckey.pem");
-
-    strcpy(res, TEST_RESOURCE_FOLDER);
-    strcat(res, "/preenrollment.p12");
-    char p12[5000];
-    size_t p12_len = read_file(res, "rb", p12);
+    char key[5000];
+    strcpy(key, getenv(TEST_RESOURCE_FOLDER));
+    strcat(key, "/server-key.pem");
     
     char implicit_ta[5000];
     size_t implicit_ta_len = 5000;
@@ -320,13 +325,12 @@ static MunitResult test_client_enroll_basic_pop(const MunitParameter params[], v
     RFC7030_Enroll_Options_t cfg;
     memset(&cfg, 0, sizeof(cfg));
     cfg.opts.host = "localhost";
-    cfg.opts.port = 8443;
+    cfg.opts.port = 10443;
     cfg.opts.label = NULL;
     cfg.opts.cachain = cacerts;
-    cfg.csr_ctx = (CsrCtx_t *)csr_ctx;
+    cfg.csr_ctx = (CsrCtx_t *)key;
 
     RFC7030_Subsystem_Config_t *implCfg = rfc7030_get_config();
-    implCfg->parse_p12(p12, p12_len, "12345", &cfg.auth, &err);
     implCfg->get_csr = pop_create_csr;
 
     munit_assert_true(rfc7030_request_certificate(&cfg, 
@@ -344,10 +348,10 @@ static MunitResult test_client_enroll_basic_pop(const MunitParameter params[], v
 static MunitTest test_suite_tests[] = {
   { (char*) "/est/int/test_client_cacerts", test_client_cacerts, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { (char*) "/est/int/test_client_cacerts_invalid_est_ta", test_client_cacerts_invalid_est_ta, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-  { (char*) "/est/int/test_client_enroll_invalid_est_ta", test_client_enroll_invalid_est_ta, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
- // { (char*) "/est/int/test_client_enroll_crt", test_client_enroll_crt, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-  { (char*) "/est/int/test_client_enroll_basic", test_client_enroll_basic, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-  { (char*) "/est/int/test_client_renew", test_client_renew, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+   { (char*) "/est/int/test_client_enroll_invalid_est_ta", test_client_enroll_invalid_est_ta, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+   { (char*) "/est/int/test_client_enroll_crt", test_client_enroll_crt, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+   { (char*) "/est/int/test_client_enroll_basic", test_client_enroll_basic, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+   { (char*) "/est/int/test_client_renew", test_client_renew, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
  // { (char*) "/est/int/test_client_enroll_basic_pop", test_client_enroll_basic_pop, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };

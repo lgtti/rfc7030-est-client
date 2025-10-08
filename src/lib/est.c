@@ -117,6 +117,8 @@ bool_t est_connect(ESTClient_Ctx_t *ctx, const char *host, int port, const ESTAu
         return EST_FALSE;
     }
 
+    LOG_INFO(("EST client connected\n"))
+
     return EST_TRUE;
 }
 
