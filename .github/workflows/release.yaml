@@ -1,0 +1,127 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    tags: 
+    - 'v*.*.*'
+
+jobs:
+  src:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+        
+    - name: Create source code asset
+      run: |
+        zip -r rfc7030-est-client-${GITHUB_REF_NAME}-src.zip src include CMakeLists.txt README.md LICENSE
+        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz src include CMakeLists.txt README.md LICENSE
+
+    - name: Upload File zip
+      uses: actions/upload-artifact@v2
+      with:
+        name: zip-src
+        path: rfc7030-est-client-${GITHUB_REF_NAME}-src.zip
+        retention-days: 1
+
+    - name: Upload File tar.gz
+      uses: actions/upload-artifact@v2
+      with:
+        name: tar-src
+        path: rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz
+        retention-days: 1
+
+  ubuntu_18_04:
+    runs-on: ubuntu-18.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          libssl-dev \
+          libcurl4-openssl-dev \
+          pkg-config \
+          git \
+          zip \
+          tar \
+          gzip
+          
+    - name: Configure CMake
+      run: |
+        cmake -Ssrc -Bbuild \
+          -DBUILD_CLONE_SUBMODULES=ON \
+          -DUSE_OPENSSL=ON
+          
+    - name: Build project
+      run: |
+        cd build
+        make -j$(nproc)
+
+    - name: Create bin asset
+      run: |
+        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip build/bin/rfc-est-client
+        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz build/bin/rfc-est-client
+
+    - name: Upload File zip
+      uses: actions/upload-artifact@v2
+      with:
+        name: zip-ubuntu-18.04
+        path: rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip
+        retention-days: 1
+
+    - name: Upload File tar.gz
+      uses: actions/upload-artifact@v2
+      with:
+        name: tar-ubuntu-18.04
+        path: rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz
+        retention-days: 1
+
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download artifact zip src
+      uses: actions/download-artifact@v4
+      with:
+        name: zip-src
+        path: ./rfc7030-est-client-${GITHUB_REF_NAME}-src.zip
+
+    - name: Download artifact tar src
+      uses: actions/download-artifact@v4
+      with:
+        name: tar-src
+        path: ./rfc7030-est-client-${GITHUB_REF_NAME}-src.tar
+
+    - name: Download artifact zip ubuntu-18.04
+      uses: actions/download-artifact@v4
+      with:
+        name: zip-src
+        path: ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip
+
+    - name: Download artifact tar ubuntu-18.04
+      uses: actions/download-artifact@v4
+      with:
+        name: tar-src
+        path: ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz
+
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: |
+          ./rfc7030-est-client-${GITHUB_REF_NAME}-src.zip
+          ./rfc7030-est-client-${GITHUB_REF_NAME}-src.tar
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz
