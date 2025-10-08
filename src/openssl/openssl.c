@@ -55,8 +55,9 @@ char *oss_err_as_string (void) {
 }
 
 void oss_print_error() {
+    LOG_DEBUG(("This is the openssl specific error\n"))
     char *ossl_err = oss_err_as_string();
-    LOG_ERROR(("%s\n", ossl_err))
+    LOG_DEBUG(("%s\n", ossl_err))
     free(ossl_err);
 }
 

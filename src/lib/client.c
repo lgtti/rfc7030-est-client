@@ -79,6 +79,8 @@ static bool_t est_client_enroll_internal(const ESTClient_Options_t *opts,
         return EST_FALSE;
     }
 
+    LOG_DEBUG(("Check for tlsunque value\n"))
+
     // Obtain the CSR from the caller
     char csr[EST_CSR_MAX_LEN];
     size_t csr_len = EST_CSR_MAX_LEN;
@@ -86,6 +88,8 @@ static bool_t est_client_enroll_internal(const ESTClient_Options_t *opts,
     if(!opts->get_csr(csr_ctx, output->ctx->tlsunique, output->ctx->tlsunique_len, csr, &csr_len, err)) {
         return EST_FALSE;
     }
+
+    LOG_DEBUG(("Invoke enroll\n"))
 
     output->enrolled = est_enroll(output->ctx, csr, csr_len, renew, err);
     return output->enrolled != NULL;

@@ -129,6 +129,8 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
         return EST_FALSE;
     }
 
+    LOG_DEBUG(("Collect tls unique information...\n"))
+
     byte_t tlsunique_output[EST_TLS_UNIQUE_LEN];
     memset(tlsunique_output, 0, sizeof(tlsunique_output));
 

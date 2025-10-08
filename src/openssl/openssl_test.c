@@ -33,11 +33,18 @@ bool_t is_issuer(ESTCertificate_t *issuer, ESTCertificate_t *crt) {
 
 bool_t pop_create_csr(void *ctx, const char *tlsunique, size_t tlsunique_len, byte_t *csr, size_t *csr_len, ESTError_t *err) {
     char *pkeyfilename = (char *)ctx;
+
+    LOG_DEBUG(("Create CSR with POP, key file=%s\n", pkeyfilename))
+
     FILE *pf = fopen(pkeyfilename, "rt");
     EVP_PKEY *pk = PEM_read_PrivateKey(pf, NULL, NULL, NULL);
 
+    LOG_DEBUG(("Create new X509_REQ object\n"))
+
     X509_REQ *req = X509_REQ_new();
     X509_REQ_set_pubkey(req, pk);
+
+    LOG_DEBUG(("Set subject name and challengePassword attribute\n"))
 
     X509_NAME *x509Name = X509_REQ_get_subject_name(req);
     X509_NAME_add_entry_by_txt(x509Name, "C", MBSTRING_ASC, (const unsigned char *)"IT", -1, -1, 0);
@@ -47,12 +54,19 @@ bool_t pop_create_csr(void *ctx, const char *tlsunique, size_t tlsunique_len, by
     X509_REQ_set_subject_name(req, x509Name);
     X509_REQ_add1_attr_by_NID(req, NID_pkcs9_challengePassword, MBSTRING_ASC, (const unsigned char *)tlsunique, -1);
 
+    LOG_DEBUG(("Sign csr\n"))
+
     X509_REQ_sign(req, pk, EVP_sha256());
+
+    LOG_DEBUG(("Convert csr to PEM format\n"))
 
     BIO *mem = BIO_new(BIO_s_mem());
     PEM_write_bio_X509_REQ(mem, req);
     *csr_len = BIO_read(mem, csr, *csr_len);
     BIO_free(mem);
+    X509_NAME_free(x509Name);
+    EVP_PKEY_free(pk);
+
 
     return EST_TRUE;
 }

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  est-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cisco-libest-server
+    ports:
+      - "8443:8443"  # TLS port
+      - "9443:9443"  # mTLS port
+      - "10443:10443"  # mTLS port
+    volumes:
+      - ./config:/etc/est/config:ro  # Config files (read-only)
+      - ca-database:/etc/est/database  # CA database (persistent)
+      - ./logs:/var/log/est
+    environment:
+      - EST_LOG_LEVEL=DEBUG
+    restart: unless-stopped
+    networks:
+      - est-network
+
+volumes:
+  ca-database:
+    driver: local
+
+networks:
+  est-network:
+    driver: bridge
