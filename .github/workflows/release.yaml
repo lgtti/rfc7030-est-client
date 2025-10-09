@@ -41,19 +41,19 @@ jobs:
       uses: docker/setup-buildx-action@v3
     - name: debian11
       run: |
-        build.debian11.sh
+        ./build.debian11.sh
     - name: debian12
       run: |
-        build.debian12.sh
+        ./build.debian12.sh
     - name: ubuntu1804
       run: |
-        build.ubuntu18.04.sh
+        ./build.ubuntu18.04.sh
     - name: ubuntu2004
       run: |
-        build.ubuntu20.04.sh
+        ./build.ubuntu20.04.sh
     - name: ubuntu2204
       run: |
-        build.ubuntu22.04.sh
+        ./build.ubuntu22.04.sh
     - name: Zip artifacts
       run: |
         zip -r dist.zip dist
