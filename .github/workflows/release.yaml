@@ -34,63 +34,41 @@ jobs:
         path: rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz
         retention-days: 1
 
-  ubuntu_20_04:
-    runs-on: ubuntu-20.04
-    
+  build:
+    runs-on: ubuntu-22.04
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
-      with:
-        submodules: recursive
-        
-    - name: Install dependencies
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: debian11
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          cmake \
-          libssl-dev \
-          libcurl4-openssl-dev \
-          pkg-config \
-          git \
-          zip \
-          tar \
-          gzip
-          
-    - name: Configure CMake
+        build.debian11.sh
+    - name: debian12
       run: |
-        cmake -Ssrc -Bbuild \
-          -DBUILD_CLONE_SUBMODULES=ON \
-          -DUSE_OPENSSL=ON
-          
-    - name: Build project
+        build.debian12.sh
+    - name: ubuntu1804
       run: |
-        cd build
-        make -j$(nproc)
-
-    - name: Create bin asset
+        build.ubuntu18.04.sh
+    - name: ubuntu2004
       run: |
-        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip build/bin/rfc-est-client
-        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz build/bin/rfc-est-client
+        build.ubuntu20.04.sh
+    - name: ubuntu2204
+      run: |
+        build.ubuntu22.04.sh
+    - name: Zip artifacts
+      run: |
+        zip -r dist.zip dist
 
     - name: Upload File zip
       uses: actions/upload-artifact@v4
       with:
-        name: zip-ubuntu-20.04
-        path: rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.zip
-        retention-days: 1
-
-    - name: Upload File tar.gz
-      uses: actions/upload-artifact@v4
-      with:
-        name: tar-ubuntu-20.04
-        path: rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.tar.gz
+        name: dist.zip
+        path: dist.zip
         retention-days: 1
 
   release:
     runs-on: ubuntu-latest
     needs: 
-    - ubuntu_20_04
+    - build
     - src
 
     steps:
@@ -106,17 +84,25 @@ jobs:
         name: tar-src
         path: ./rfc7030-est-client-${GITHUB_REF_NAME}-src.tar
 
-    - name: Download artifact zip ubuntu-20.04
+    - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: zip-src
-        path: ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.zip
+        name: dist.zip
+        path: ./dist.zip
 
-    - name: Download artifact tar ubuntu-20.04
-      uses: actions/download-artifact@v4
-      with:
-        name: tar-src
-        path: ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.tar.gz
+    - name: Explode build artifacts
+      run: |
+        unzip dist.zip -d ./dist
+        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip ./dist/ubuntu1804
+        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz ./dist/ubuntu1804
+        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.zip ./dist/ubuntu2004
+        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.tar.gz ./dist/ubuntu2004
+        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-22.04.zip ./dist/ubuntu2204
+        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-22.04.tar.gz ./dist/ubuntu2204
+        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.debian-11.zip ./dist/debian11
+        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.debian-11.tar.gz ./dist/debian11
+        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.debian-12.zip ./dist/debian12
+        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.debian-12.tar.gz ./dist/debian12 
 
     - name: Release
       uses: softprops/action-gh-release@v2
@@ -125,6 +111,15 @@ jobs:
       with:
         files: |
           ./rfc7030-est-client-${GITHUB_REF_NAME}-src.zip
-          ./rfc7030-est-client-${GITHUB_REF_NAME}-src.tar
+          ./rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz
           ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.zip
           ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.tar.gz
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-22.04.zip
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-22.04.tar.gz
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.debian-11.zip
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.debian-11.tar.gz
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.debian-12.zip
+          ./rfc7030-est-client-${GITHUB_REF_NAME}.debian-12.tar.gz
+
