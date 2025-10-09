@@ -37,6 +37,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+        
     - name: Setup Docker Buildx
       uses: docker/setup-buildx-action@v3
     - name: debian11
