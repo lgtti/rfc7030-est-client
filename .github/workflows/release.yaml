@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Release
 
 on:
   push:
@@ -6,32 +6,6 @@ on:
     - 'v*.*.*'
 
 jobs:
-  src:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
-      with:
-        submodules: recursive
-        
-    - name: Create source code asset
-      run: |
-        zip -r rfc7030-est-client-src.zip src test AUTHORS README.md LICENSE
-        tar -czf rfc7030-est-client-src.tar.gz src test AUTHORS README.md LICENSE
-
-    - name: Upload source code
-      uses: actions/upload-artifact@v4
-      with:
-        name: code
-        path: |
-          src
-          test
-          AUTHORS
-          README.md
-          LICENSE
-        retention-days: 1
-
   build-debian11:
     runs-on: ubuntu-latest
     steps:
@@ -115,14 +89,8 @@ jobs:
     - build-debian12
     - build-ubuntu2004
     - build-ubuntu2204
-    - src
 
     steps:
-    - name: Download code
-      uses: actions/download-artifact@v4
-      with:
-        name: code
-
     - name: Download deb11
       uses: actions/download-artifact@v4
       with:
@@ -148,8 +116,6 @@ jobs:
 
     - name: Explode build artifacts
       run: |
-        zip -r rfc7030-est-client-src.zip src test AUTHORS README.md LICENSE
-        tar -czf rfc7030-est-client-src.tar.gz src test AUTHORS README.md LICENSE
         zip -r rfc7030-est-client.ubuntu-20.04.zip ./ubuntu2004
         tar -czf rfc7030-est-client.ubuntu-20.04.tar.gz ./ubuntu2004
         zip -r rfc7030-est-client.ubuntu-22.04.zip ./ubuntu2204

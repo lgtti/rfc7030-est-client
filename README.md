@@ -1,8 +1,6 @@
 # RFC7030 EST Client
 
 [![CI/CD Pipeline](https://github.com/lorenzo/rfc7030-est-client/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/lorenzo/rfc7030-est-client/actions/workflows/ci.yml)
-[![Integration Tests](https://github.com/lorenzo/rfc7030-est-client/workflows/Integration%20Tests%20Only/badge.svg)](https://github.com/lorenzo/rfc7030-est-client/actions/workflows/integration-tests.yml)
-[![Ubuntu Build](https://github.com/lorenzo/rfc7030-est-client/workflows/Ubuntu%20Build/badge.svg)](https://github.com/lorenzo/rfc7030-est-client/actions/workflows/build-matrix.yml)
 [![CodeQL Analysis](https://github.com/lorenzo/rfc7030-est-client/workflows/CodeQL%20Analysis/badge.svg)](https://github.com/lorenzo/rfc7030-est-client/actions/workflows/codeql.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
