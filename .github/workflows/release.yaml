@@ -118,6 +118,11 @@ jobs:
     - src
 
     steps:
+    - name: Download code
+      uses: actions/download-artifact@v4
+      with:
+        name: code
+
     - name: Download deb11
       uses: actions/download-artifact@v4
       with:
@@ -145,14 +150,14 @@ jobs:
       run: |
         zip -r rfc7030-est-client-src.zip src test AUTHORS README.md LICENSE
         tar -czf rfc7030-est-client-src.tar.gz src test AUTHORS README.md LICENSE
-        zip -r rfc7030-est-client.ubuntu-20.04.zip ./dist/ubuntu2004
-        tar -czf rfc7030-est-client.ubuntu-20.04.tar.gz ./dist/ubuntu2004
-        zip -r rfc7030-est-client.ubuntu-22.04.zip ./dist/ubuntu2204
-        tar -czf rfc7030-est-client.ubuntu-22.04.tar.gz ./dist/ubuntu2204
-        zip -r rfc7030-est-client.debian-11.zip ./dist/debian11
-        tar -czf rfc7030-est-client.debian-11.tar.gz ./dist/debian11
-        zip -r rfc7030-est-client.debian-12.zip ./dist/debian12
-        tar -czf rfc7030-est-client.debian-12.tar.gz ./dist/debian12 
+        zip -r rfc7030-est-client.ubuntu-20.04.zip ./ubuntu2004
+        tar -czf rfc7030-est-client.ubuntu-20.04.tar.gz ./ubuntu2004
+        zip -r rfc7030-est-client.ubuntu-22.04.zip ./ubuntu2204
+        tar -czf rfc7030-est-client.ubuntu-22.04.tar.gz ./ubuntu2204
+        zip -r rfc7030-est-client.debian-11.zip ./debian11
+        tar -czf rfc7030-est-client.debian-11.tar.gz ./debian11
+        zip -r rfc7030-est-client.debian-12.zip ./debian12
+        tar -czf rfc7030-est-client.debian-12.tar.gz ./debian12 
 
     - name: Release
       uses: softprops/action-gh-release@v2
