@@ -47,8 +47,8 @@ jobs:
     - name: Upload File
       uses: actions/upload-artifact@v4
       with:
-        name: dist
-        path: debian11
+        name: debian11
+        path: dist
         retention-days: 1
 
   build-debian12:
@@ -66,8 +66,8 @@ jobs:
     - name: Upload File
       uses: actions/upload-artifact@v4
       with:
-        name: dist
-        path: debian12
+        name: debian12
+        path: dist
         retention-days: 1
 
   build-ubuntu2004:
@@ -85,8 +85,8 @@ jobs:
     - name: Upload File
       uses: actions/upload-artifact@v4
       with:
-        name: dist
-        path: ubuntu2004
+        name: ubuntu2004
+        path: dist
         retention-days: 1
 
   build-ubuntu2204:
@@ -104,8 +104,8 @@ jobs:
     - name: Upload File
       uses: actions/upload-artifact@v4
       with:
-        name: dist
-        path: ubuntu2204
+        name: ubuntu2204
+        path: dist
         retention-days: 1
 
   release:
