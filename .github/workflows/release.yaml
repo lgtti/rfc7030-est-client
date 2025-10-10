@@ -50,9 +50,6 @@ jobs:
     - name: debian12
       run: |
         ./build.debian12.sh
-    - name: ubuntu1804
-      run: |
-        ./build.ubuntu18.04.sh
     - name: ubuntu2004
       run: |
         ./build.ubuntu20.04.sh
@@ -98,8 +95,6 @@ jobs:
     - name: Explode build artifacts
       run: |
         unzip dist.zip -d ./dist
-        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip ./dist/ubuntu1804
-        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz ./dist/ubuntu1804
         zip -r rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.zip ./dist/ubuntu2004
         tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.tar.gz ./dist/ubuntu2004
         zip -r rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-22.04.zip ./dist/ubuntu2204
@@ -117,8 +112,6 @@ jobs:
         files: |
           ./rfc7030-est-client-${GITHUB_REF_NAME}-src.zip
           ./rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.zip
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-18.04.tar.gz
           ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.zip
           ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.tar.gz
           ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-22.04.zip

@@ -1,5 +1,5 @@
 # Project information.
-cmake_minimum_required ( VERSION 3.18.0 )
+cmake_minimum_required ( VERSION 3.10.0 )
 project ( "RFC7030-EST-Integration-Test"
           VERSION 1.0.0
           LANGUAGES C )
