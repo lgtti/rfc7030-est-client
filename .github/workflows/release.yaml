@@ -17,21 +17,21 @@ jobs:
         
     - name: Create source code asset
       run: |
-        zip -r rfc7030-est-client-${GITHUB_REF_NAME}-src.zip src test AUTHORS README.md LICENSE
-        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz src test AUTHORS README.md LICENSE
+        zip -r rfc7030-est-client-src.zip src test AUTHORS README.md LICENSE
+        tar -czf rfc7030-est-client-src.tar.gz src test AUTHORS README.md LICENSE
 
     - name: Upload File zip
       uses: actions/upload-artifact@v4
       with:
         name: zip-src
-        path: rfc7030-est-client-${GITHUB_REF_NAME}-src.zip
+        path: rfc7030-est-client-src.zip
         retention-days: 1
 
     - name: Upload File tar.gz
       uses: actions/upload-artifact@v4
       with:
         name: tar-src
-        path: rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz
+        path: rfc7030-est-client-src.tar.gz
         retention-days: 1
 
   build:
@@ -78,13 +78,13 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: zip-src
-        path: ./rfc7030-est-client-${GITHUB_REF_NAME}-src.zip
+        path: ./rfc7030-est-client-src.zip
 
     - name: Download artifact tar src
       uses: actions/download-artifact@v4
       with:
         name: tar-src
-        path: ./rfc7030-est-client-${GITHUB_REF_NAME}-src.tar
+        path: ./rfc7030-est-client-src.tar
 
     - name: Download build artifacts
       uses: actions/download-artifact@v4
@@ -95,29 +95,30 @@ jobs:
     - name: Explode build artifacts
       run: |
         unzip dist.zip -d ./dist
-        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.zip ./dist/ubuntu2004
-        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.tar.gz ./dist/ubuntu2004
-        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-22.04.zip ./dist/ubuntu2204
-        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-22.04.tar.gz ./dist/ubuntu2204
-        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.debian-11.zip ./dist/debian11
-        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.debian-11.tar.gz ./dist/debian11
-        zip -r rfc7030-est-client-${GITHUB_REF_NAME}.debian-12.zip ./dist/debian12
-        tar -czf rfc7030-est-client-${GITHUB_REF_NAME}.debian-12.tar.gz ./dist/debian12 
+        zip -r rfc7030-est-client.ubuntu-20.04.zip ./dist/ubuntu2004
+        tar -czf rfc7030-est-client.ubuntu-20.04.tar.gz ./dist/ubuntu2004
+        zip -r rfc7030-est-client.ubuntu-22.04.zip ./dist/ubuntu2204
+        tar -czf rfc7030-est-client.ubuntu-22.04.tar.gz ./dist/ubuntu2204
+        zip -r rfc7030-est-client.debian-11.zip ./dist/debian11
+        tar -czf rfc7030-est-client.debian-11.tar.gz ./dist/debian11
+        zip -r rfc7030-est-client.debian-12.zip ./dist/debian12
+        tar -czf rfc7030-est-client.debian-12.tar.gz ./dist/debian12 
 
     - name: Release
       uses: softprops/action-gh-release@v2
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
+        name: ${{ github.ref_name }}
         files: |
-          ./rfc7030-est-client-${GITHUB_REF_NAME}-src.zip
-          ./rfc7030-est-client-${GITHUB_REF_NAME}-src.tar.gz
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.zip
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-20.04.tar.gz
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-22.04.zip
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.ubuntu-22.04.tar.gz
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.debian-11.zip
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.debian-11.tar.gz
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.debian-12.zip
-          ./rfc7030-est-client-${GITHUB_REF_NAME}.debian-12.tar.gz
+          ./rfc7030-est-client-src.zip
+          ./rfc7030-est-client-src.tar.gz
+          ./rfc7030-est-client.ubuntu-20.04.zip
+          ./rfc7030-est-client.ubuntu-20.04.tar.gz
+          ./rfc7030-est-client.ubuntu-22.04.zip
+          ./rfc7030-est-client.ubuntu-22.04.tar.gz
+          ./rfc7030-est-client.debian-11.zip
+          ./rfc7030-est-client.debian-11.tar.gz
+          ./rfc7030-est-client.debian-12.zip
+          ./rfc7030-est-client.debian-12.tar.gz
 
