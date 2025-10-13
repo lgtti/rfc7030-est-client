@@ -79,7 +79,7 @@ jobs:
     - name: Download ub2004
       uses: actions/download-artifact@v4
       with:
-        name: rfc7030-est-client.ubuntu2004
+        name: rfc7030-est-client.ubuntu20.04
 
     - name: Download ub2004 pkg
       uses: actions/download-artifact@v4
