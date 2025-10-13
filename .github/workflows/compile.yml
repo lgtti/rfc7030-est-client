@@ -45,7 +45,7 @@ jobs:
 
     - name: build client
       run: |
-        docker build . -f deploy/${{inputs.type}}/docker/Dockerfile -t ${{inputs.name}} --build-arg OS=${{inputs.os}} --build-arg VERSION=${{inputs.version}} .
+        docker build . -f deploy/docker/Dockerfile.apt -t ${{inputs.name}} --build-arg OS=${{inputs.os}} --build-arg VERSION=${{inputs.version}}
         docker create --name temp-container ${{inputs.name}}
         docker cp temp-container:/usr/local/bin/rfc7030-est-client /usr/local/bin/rfc7030-est-client
         docker rm temp-container
