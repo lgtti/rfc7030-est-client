@@ -1,7 +1,7 @@
 # RFC7030 EST Client
 
-[![CI/CD Pipeline](https://github.com/lorenzo/rfc7030-est-client/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/lorenzo/rfc7030-est-client/actions/workflows/ci.yml)
-[![CodeQL Analysis](https://github.com/lorenzo/rfc7030-est-client/workflows/CodeQL%20Analysis/badge.svg)](https://github.com/lorenzo/rfc7030-est-client/actions/workflows/codeql.yml)
+[![CI/CD Pipeline](https://github.com/lgtti/rfc7030-est-client/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lgtti/rfc7030-est-client/actions/workflows/ci.yml)
+[![CodeQL Analysis](https://github.com/lgtti/rfc7030-est-client/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/lgtti/rfc7030-est-client/actions/workflows/codeql.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Library and client implementation of EST Enrollment Protocol RFC 7030  
