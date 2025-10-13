@@ -1,13 +1,13 @@
 #!/bin/sh
 
 # EST Client Manufacturer Script
-# Usage: ./manufacturer.sh <csr_directory> <est_server_url> <est_server_port> <p12_filename> <p12_pin>
+# Usage: ./manufacturer.sh <csr_directory> <est_server_url> <est_server_port> <p12_filename> <p12_pin> <label> <ca_chain_file>
 
 set -e
 
-if [ $# -ne 5 ]; then
-    echo "Usage: $0 <csr_directory> <est_server_url> <est_server_port> <p12_filename> <p12_pin>"
-    echo "Example: $0 /path/to/csr/files testrfc7030.com 8443 preenrollment.p12 12345"
+if [ $# -ne 7 ]; then
+    echo "Usage: $0 <csr_directory> <est_server_url> <est_server_port> <p12_filename> <p12_pin> <label> <ca_chain_file>"
+    echo "Example: $0 /path/to/csr/files testrfc7030.com 8443 preenrollment.p12 12345 server1 ca-chain.pem"
     exit 1
 fi
 
@@ -16,21 +16,23 @@ EST_SERVER="$2"
 EST_PORT="$3"
 P12_FILENAME="$4"
 P12_PIN="$5"
+LABEL="$6"
+CA_CHAIN_FILE="$7"
 
-EST_CLIENT="./build/bin/rfc7030-est-client"
+EST_CLIENT="/usr/local/bin/rfc7030-est-client"
 
 # Verify CSR format
 verify_csr() {
     local csr_file="$1"
     [ -f "$csr_file" ] && [ -r "$csr_file" ] && \
-    head -1 "$csr_file" | grep -q "-----BEGIN CERTIFICATE REQUEST-----" && \
-    tail -1 "$csr_file" | grep -q "-----END CERTIFICATE REQUEST-----"
+    head -1 "$csr_file" | grep -q -- "-----BEGIN CERTIFICATE REQUEST-----" && \
+    tail -1 "$csr_file" | grep -q -- "-----END CERTIFICATE REQUEST-----"
 }
 
 # Find P12 file
 find_p12_file() {
     local csr_name="$1"
-    local p12_file="$CSR_DIR/$csr_name/$P12_FILENAME"
+    local p12_file="$CSR_DIR/$P12_FILENAME"
     [ -f "$p12_file" ] && echo "$p12_file" || return 1
 }
 
@@ -45,6 +47,8 @@ launch_est_client() {
     "$EST_CLIENT" \
         -s "$EST_SERVER" \
         -p "$EST_PORT" \
+        --label "$LABEL" \
+        --server-chain "$CA_CHAIN_FILE" \
         --csr "$csr_file" \
         --p12 "$p12_file" \
         --p12-password "$P12_PIN" \

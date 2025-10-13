@@ -1,0 +1,6 @@
+#!/bin/bash
+# Pre-removal script for rfc7030-est-client
+
+set -e
+
+echo "rfc7030-est-client removed successfully"

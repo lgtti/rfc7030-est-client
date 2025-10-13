@@ -3,149 +3,48 @@ name: Release
 on:
   push:
     tags: 
-    - 'v*.*.*'
+    - '*.*.*'
 
 jobs:
   build-debian11:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
-      with:
-        submodules: recursive
-    - name: Setup Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    - name: debian11
-      run: |
-        ./build.debian11.sh
-    - name: Upload File
-      uses: actions/upload-artifact@v4
-      with:
-        name: debian11
-        path: dist
-        retention-days: 1
+    uses: ./.github/workflows/compile.yml
+    with:
+      type: apt
+      os: debian
+      version: '11'
+      name: rfc7030-est-client-debian11
 
   build-debian12:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
-      with:
-        submodules: recursive
-    - name: Setup Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    - name: debian12
-      run: |
-        ./build.debian12.sh
-    - name: Upload File
-      uses: actions/upload-artifact@v4
-      with:
-        name: debian12
-        path: dist
-        retention-days: 1
+    uses: ./.github/workflows/compile.yml
+    with:
+      type: apt
+      os: debian
+      version: '12'
+      name: rfc7030-est-client-debian12
 
   build-ubuntu2004:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
-      with:
-        submodules: recursive
-    - name: Setup Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    - name: ubuntu2004
-      run: |
-        ./build.ubuntu20.04.sh
-    - name: Upload File
-      uses: actions/upload-artifact@v4
-      with:
-        name: ubuntu2004
-        path: dist
-        retention-days: 1
+    uses: ./.github/workflows/compile.yml
+    with:
+      type: apt
+      os: ubuntu
+      version: '20.04'  
+      name: rfc7030-est-client-ubuntu2004
 
   build-ubuntu2204:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
-      with:
-        submodules: recursive
-    - name: Setup Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    - name: ubuntu2204
-      run: |
-        ./build.ubuntu22.04.sh
-    - name: Upload File
-      uses: actions/upload-artifact@v4
-      with:
-        name: ubuntu2204
-        path: dist
-        retention-days: 1
+    uses: ./.github/workflows/compile.yml
+    with:
+      type: apt
+      os: ubuntu
+      version: '22.04'
+      name: rfc7030-est-client-ubuntu2204
 
-  build-apt:
-    runs-on: ubuntu-latest
-    needs: 
-    - build-debian11
-    - build-debian12
-    - build-ubuntu2004
-    - build-ubuntu2204
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
-      with:
-        submodules: recursive
-
-    - name: Download all binaries
-      uses: actions/download-artifact@v4
-      with:
-        name: debian11
-
-    - name: Download deb12
-      uses: actions/download-artifact@v4
-      with:
-        name: debian12
-
-    - name: Download ub2004
-      uses: actions/download-artifact@v4
-      with:
-        name: ubuntu2004
-
-    - name: Download ub2204
-      uses: actions/download-artifact@v4
-      with:
-        name: ubuntu2204
-
-    - name: Setup build environment
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y dpkg-dev
-
-    - name: Extract version from tag
-      id: version
-      run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "Building version: $VERSION"
-
-    - name: Build APT package
-      run: |
-        # Copy all built binaries to the expected location
-        mkdir -p build/bin
-        cp debian11/rfc7030-est-client build/bin/rfc7030-est-client-debian11
-        cp debian12/rfc7030-est-client build/bin/rfc7030-est-client-debian12
-        cp ubuntu2004/rfc7030-est-client build/bin/rfc7030-est-client-ubuntu2004
-        cp ubuntu2204/rfc7030-est-client build/bin/rfc7030-est-client-ubuntu2204
-        
-        # Build the APT package
-        ./build-apt.sh ${{ steps.version.outputs.version }}
-
-    - name: Upload APT package
-      uses: actions/upload-artifact@v4
-      with:
-        name: apt-package
-        path: build-apt/*.deb
-        retention-days: 1
+  build-ubuntu2404:
+    uses: ./.github/workflows/compile.yml
+    with:
+      type: apt
+      os: ubuntu
+      version: '24.04'
+      name: rfc7030-est-client-ubuntu2404
 
   release:
     runs-on: ubuntu-latest
@@ -154,56 +53,58 @@ jobs:
     - build-debian12
     - build-ubuntu2004
     - build-ubuntu2204
-    - build-apt
+    - build-ubuntu2404
 
     steps:
     - name: Download deb11
       uses: actions/download-artifact@v4
       with:
-        name: debian11
+        name: rfc7030-est-client.debian11
+
+    - name: Download deb11 pkg
+      uses: actions/download-artifact@v4
+      with:
+        name: rfc7030-est-client.debian11.deb
 
     - name: Download deb12
       uses: actions/download-artifact@v4
       with:
-        name: debian12
+        name: rfc7030-est-client.debian12
+
+    - name: Download deb12 pkg
+      uses: actions/download-artifact@v4
+      with:
+        name: rfc7030-est-client.debian12.deb
 
     - name: Download ub2004
       uses: actions/download-artifact@v4
       with:
-        name: ubuntu2004
+        name: rfc7030-est-client.ubuntu2004
+
+    - name: Download ub2004 pkg
+      uses: actions/download-artifact@v4
+      with:
+        name: rfc7030-est-client.ubuntu2004.deb
 
     - name: Download ub2204
       uses: actions/download-artifact@v4
       with:
-        name: ubuntu2204
+        name: rfc7030-est-client.ubuntu2204 
 
-    - name: Download APT package
+    - name: Download ub2204 pkg
       uses: actions/download-artifact@v4
       with:
-        name: apt-package
+        name: rfc7030-est-client.ubuntu2204.deb 
 
-    - name: Extract version from tag
-      id: version
-      run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
+    - name: Download ub2404
+      uses: actions/download-artifact@v4
+      with:
+        name: rfc7030-est-client.ubuntu2404
 
-    - name: Create source archives
-      run: |
-        # Create source archives
-        zip -r rfc7030-est-client-src.zip . -x "build/*" "dist/*" ".git/*" "*.deb"
-        tar -czf rfc7030-est-client-src.tar.gz --exclude="build" --exclude="dist" --exclude=".git" --exclude="*.deb" .
-
-    - name: Create binary archives
-      run: |
-        zip -r rfc7030-est-client.ubuntu-20.04.zip ./ubuntu2004
-        tar -czf rfc7030-est-client.ubuntu-20.04.tar.gz ./ubuntu2004
-        zip -r rfc7030-est-client.ubuntu-22.04.zip ./ubuntu2204
-        tar -czf rfc7030-est-client.ubuntu-22.04.tar.gz ./ubuntu2204
-        zip -r rfc7030-est-client.debian-11.zip ./debian11
-        tar -czf rfc7030-est-client.debian-11.tar.gz ./debian11
-        zip -r rfc7030-est-client.debian-12.zip ./debian12
-        tar -czf rfc7030-est-client.debian-12.tar.gz ./debian12
+    - name: Download ub2404 pkg
+      uses: actions/download-artifact@v4
+      with:
+        name: rfc7030-est-client.ubuntu2404.deb
 
     - name: Release
       uses: softprops/action-gh-release@v2
@@ -212,15 +113,14 @@ jobs:
       with:
         name: ${{ github.ref_name }}
         files: |
-          ./rfc7030-est-client-src.zip
-          ./rfc7030-est-client-src.tar.gz
-          ./rfc7030-est-client.amd64.ubuntu-20.04.zip
-          ./rfc7030-est-client.amd64.ubuntu-20.04.tar.gz
-          ./rfc7030-est-client.amd64.ubuntu-22.04.zip
-          ./rfc7030-est-client.amd64.ubuntu-22.04.tar.gz
-          ./rfc7030-est-client.amd64.debian-11.zip
-          ./rfc7030-est-client.amd64.debian-11.tar.gz
-          ./rfc7030-est-client.amd64.debian-12.zip
-          ./rfc7030-est-client.amd64.debian-12.tar.gz
-          ./rfc7030-est-client.amd64.deb
+          ./rfc7030-est-client.debian11.deb
+          ./rfc7030-est-client.debian12.deb
+          ./rfc7030-est-client.ubuntu2004.deb
+          ./rfc7030-est-client.ubuntu2204.deb
+          ./rfc7030-est-client.ubuntu2404.deb
+          ./rfc7030-est-client.debian11
+          ./rfc7030-est-client.debian12
+          ./rfc7030-est-client.ubuntu2004
+          ./rfc7030-est-client.ubuntu2204
+          ./rfc7030-est-client.ubuntu2404
 

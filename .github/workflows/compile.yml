@@ -1,0 +1,74 @@
+name: compile
+on:
+  workflow_call:
+    inputs:
+      type:
+        description: 'Type of build (e.g., apt)'
+        required: true
+        type: string
+      os:
+        description: 'Base OS for Docker image (e.g., ubuntu, debian)'
+        required: true
+        type: string
+      version:
+        description: 'Version of the base OS (e.g., 20.04, 11)'
+        required: true
+        type: string
+      name:
+        description: 'Name for the Docker image'
+        required: true
+        type: string
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Install docker-compose
+      run: |
+        sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+    
+    - name: Generate test certificates
+      run: |
+        cd test
+        chmod +x generate-certs.sh
+        ./generate-certs.sh
+
+    - name: build client
+      run: |
+        docker build . -f deploy/${{inputs.type}}/docker/Dockerfile -t ${{inputs.name}} --build-arg OS=${{inputs.os}} --build-arg VERSION=${{inputs.version}} .
+        docker create --name temp-container ${{inputs.name}}
+        docker cp temp-container:/usr/local/bin/rfc7030-est-client /usr/local/bin/rfc7030-est-client
+        docker rm temp-container
+
+    - name: upload binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: rfc7030-est-client.${{inputs.os}}.${{inputs.version}}
+        path: /usr/local/bin/rfc7030-est-client
+        retention-days: 1
+
+    - name: create deb package
+      run: |
+        sed -i "s/<version>/${{github.ref_name}}/g" deploy/${{inputs.os}}${{inputs.version}}/DEBIAN/control
+        mkdir -p deploy/${{inputs.os}}${{inputs.version}}/usr/local/bin
+        cp /usr/local/bin/rfc7030-est-client deploy/${{inputs.os}}${{inputs.version}}/usr/local/bin/rfc7030-est-client
+        cp scripts/manufacturer/manufacturer.sh deploy/${{inputs.os}}${{inputs.version}}/usr/local/bin/rfc7030-manufacturer.sh
+        cd deploy/${{inputs.os}}${{inputs.version}}
+        dpkg-deb --build . ../rfc7030-est-client.${{inputs.os}}${{inputs.version}}.deb
+
+    - name: upload package
+      uses: actions/upload-artifact@v4
+      with:
+        name: rfc7030-est-client.${{inputs.os}}${{inputs.version}}.deb
+        path: ./deploy/rfc7030-est-client.${{inputs.os}}${{inputs.version}}.deb
+        retention-days: 1

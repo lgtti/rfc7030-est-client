@@ -9,21 +9,23 @@ The script processes CSR (Certificate Signing Request) files and automatically e
 ## Usage
 
 ```bash
-./manufacturer.sh <csr_directory> <est_server_url> <est_server_port> <p12_filename> <p12_pin>
+./manufacturer.sh <csr_directory> <est_server_url> <est_server_port> <p12_filename> <p12_pin> <label> <ca_chain_file>
 ```
 
 ### Parameters
 
-- `<csr_directory>` - Directory containing CSR files and their corresponding P12 directories
+- `<csr_directory>` - Directory containing CSR files and the P12 file
 - `<est_server_url>` - EST server hostname or IP address
 - `<est_server_port>` - EST server port (typically 8443 for TLS or 9443 for mTLS)
 - `<p12_filename>` - Name of the P12 file (e.g., "preenrollment.p12")
 - `<p12_pin>` - PIN/password for the P12 file
+- `<label>` - Label to identify the EST server (for multiple servers with same URL)
+- `<ca_chain_file>` - Path to the CA certificate chain file (PEM format)
 
 ### Example
 
 ```bash
-./manufacturer.sh ./csr_files testrfc7030.com 8443 preenrollment.p12 12345
+./manufacturer.sh ./csr_files testrfc7030.com 8443 preenrollment.p12 12345 server1 ca-chain.pem
 ```
 
 ## Directory Structure

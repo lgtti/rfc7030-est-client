@@ -1,0 +1,11 @@
+#!/bin/bash
+# Post-installation script for rfc7030-est-client
+
+set -e
+
+# Set executable permissions for all binaries
+chmod +x /usr/local/bin/rfc7030-est-client
+chmod +x /usr/local/bin/rfc7030-manufacturer.sh
+
+echo "rfc7030-est-client installed successfully"
+echo "You can now use 'rfc7030-est-client' command"

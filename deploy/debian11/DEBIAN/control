@@ -1,10 +1,10 @@
 Package: rfc7030-est-client
-Version: 1.0.0
+Version: <version>
 Section: utils
 Priority: optional
 Architecture: amd64
-Depends: libssl3 (>= 3.0.0), libcrypto3 (>= 3.0.0)
-Maintainer: Lorenzo <lorenzo@example.com>
+Depends: libssl1.1
+Maintainer: Lorenzo Gatti <lorenzo.gatti@infocert.it>
 Description: RFC7030 EST Client
  A library and client implementation of EST Enrollment Protocol RFC 7030.
  This package provides a command-line client for enrolling certificates

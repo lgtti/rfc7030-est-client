@@ -5,6 +5,8 @@ set -e
 mkdir -p build
 cd build 
 
+pwd
+
 cmake ../src \
     -DBUILD_CLONE_SUBMODULES=ON \
     -DUSE_OPENSSL=ON

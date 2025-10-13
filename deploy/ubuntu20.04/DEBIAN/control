@@ -1,0 +1,21 @@
+Package: rfc7030-est-client
+Version: <version>
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: libssl1.1
+Maintainer: Lorenzo Gatti <lorenzo.gatti@infocert.it>
+Description: RFC7030 EST Client
+ A library and client implementation of EST Enrollment Protocol RFC 7030.
+ This package provides a command-line client for enrolling certificates
+ using the EST (Enrollment over Secure Transport) protocol.
+ .
+ Features:
+  - Support for /cacerts, /simpleenroll, /simplereenroll endpoints
+  - TLS authentication with client certificates
+  - Basic authentication support
+  - Pluggable TLS/X.509 backend architecture
+  - Cross-platform compatibility
+ .
+ The client can be used to request certificates from EST servers
+ and supports both TLS client authentication and basic authentication.

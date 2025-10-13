@@ -3,9 +3,4 @@
 
 set -e
 
-# Remove symlink
-if [ -L /usr/bin/rfc7030-est-client ]; then
-    rm -f /usr/bin/rfc7030-est-client
-fi
-
 echo "rfc7030-est-client removed successfully"
