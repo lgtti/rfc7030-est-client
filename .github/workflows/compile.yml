@@ -53,7 +53,7 @@ jobs:
     - name: upload binary
       uses: actions/upload-artifact@v4
       with:
-        name: rfc7030-est-client.${{inputs.os}}.${{inputs.version}}
+        name: rfc7030-est-client.${{inputs.os}}${{inputs.version}}
         path: /usr/local/bin/rfc7030-est-client
         retention-days: 1
 
