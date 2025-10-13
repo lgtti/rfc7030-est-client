@@ -82,6 +82,71 @@ jobs:
         path: dist
         retention-days: 1
 
+  build-apt:
+    runs-on: ubuntu-latest
+    needs: 
+    - build-debian11
+    - build-debian12
+    - build-ubuntu2004
+    - build-ubuntu2204
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+
+    - name: Download all binaries
+      uses: actions/download-artifact@v4
+      with:
+        name: debian11
+
+    - name: Download deb12
+      uses: actions/download-artifact@v4
+      with:
+        name: debian12
+
+    - name: Download ub2004
+      uses: actions/download-artifact@v4
+      with:
+        name: ubuntu2004
+
+    - name: Download ub2204
+      uses: actions/download-artifact@v4
+      with:
+        name: ubuntu2204
+
+    - name: Setup build environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y dpkg-dev
+
+    - name: Extract version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+
+    - name: Build APT package
+      run: |
+        # Copy all built binaries to the expected location
+        mkdir -p build/bin
+        cp debian11/rfc7030-est-client build/bin/rfc7030-est-client-debian11
+        cp debian12/rfc7030-est-client build/bin/rfc7030-est-client-debian12
+        cp ubuntu2004/rfc7030-est-client build/bin/rfc7030-est-client-ubuntu2004
+        cp ubuntu2204/rfc7030-est-client build/bin/rfc7030-est-client-ubuntu2204
+        
+        # Build the APT package
+        ./build-apt.sh ${{ steps.version.outputs.version }}
+
+    - name: Upload APT package
+      uses: actions/upload-artifact@v4
+      with:
+        name: apt-package
+        path: build-apt/*.deb
+        retention-days: 1
+
   release:
     runs-on: ubuntu-latest
     needs: 
@@ -89,6 +154,7 @@ jobs:
     - build-debian12
     - build-ubuntu2004
     - build-ubuntu2204
+    - build-apt
 
     steps:
     - name: Download deb11
@@ -111,10 +177,24 @@ jobs:
       with:
         name: ubuntu2204
 
-    - name:
-      run: ls -la
+    - name: Download APT package
+      uses: actions/download-artifact@v4
+      with:
+        name: apt-package
 
-    - name: Explode build artifacts
+    - name: Extract version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Create source archives
+      run: |
+        # Create source archives
+        zip -r rfc7030-est-client-src.zip . -x "build/*" "dist/*" ".git/*" "*.deb"
+        tar -czf rfc7030-est-client-src.tar.gz --exclude="build" --exclude="dist" --exclude=".git" --exclude="*.deb" .
+
+    - name: Create binary archives
       run: |
         zip -r rfc7030-est-client.ubuntu-20.04.zip ./ubuntu2004
         tar -czf rfc7030-est-client.ubuntu-20.04.tar.gz ./ubuntu2004
@@ -123,7 +203,7 @@ jobs:
         zip -r rfc7030-est-client.debian-11.zip ./debian11
         tar -czf rfc7030-est-client.debian-11.tar.gz ./debian11
         zip -r rfc7030-est-client.debian-12.zip ./debian12
-        tar -czf rfc7030-est-client.debian-12.tar.gz ./debian12 
+        tar -czf rfc7030-est-client.debian-12.tar.gz ./debian12
 
     - name: Release
       uses: softprops/action-gh-release@v2
@@ -134,12 +214,13 @@ jobs:
         files: |
           ./rfc7030-est-client-src.zip
           ./rfc7030-est-client-src.tar.gz
-          ./rfc7030-est-client.ubuntu-20.04.zip
-          ./rfc7030-est-client.ubuntu-20.04.tar.gz
-          ./rfc7030-est-client.ubuntu-22.04.zip
-          ./rfc7030-est-client.ubuntu-22.04.tar.gz
-          ./rfc7030-est-client.debian-11.zip
-          ./rfc7030-est-client.debian-11.tar.gz
-          ./rfc7030-est-client.debian-12.zip
-          ./rfc7030-est-client.debian-12.tar.gz
+          ./rfc7030-est-client.amd64.ubuntu-20.04.zip
+          ./rfc7030-est-client.amd64.ubuntu-20.04.tar.gz
+          ./rfc7030-est-client.amd64.ubuntu-22.04.zip
+          ./rfc7030-est-client.amd64.ubuntu-22.04.tar.gz
+          ./rfc7030-est-client.amd64.debian-11.zip
+          ./rfc7030-est-client.amd64.debian-11.tar.gz
+          ./rfc7030-est-client.amd64.debian-12.zip
+          ./rfc7030-est-client.amd64.debian-12.tar.gz
+          ./rfc7030-est-client.amd64.deb
 

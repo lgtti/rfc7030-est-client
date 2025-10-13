@@ -91,6 +91,18 @@ static struct cag_option options[] = {
         .access_name = "output-crt",
         .value_name = "PEM FILENAME PATH",
         .description = "Filename and path used to save the Enrolled/Renewed certificate"
+    },
+    {
+        .identifier = 'k',
+        .access_name = "input-key",
+        .value_name = "KEY FILENAME PATH",
+        .description = "Private key used to request enrollment"
+    },
+    {
+        .identifier = 'e',
+        .access_name = "input-cert",
+        .value_name = "CERT FILENAME PATH",
+        .description = "Certificate signed by private key from k flag used to request enrollment"
     }
 };
 
