@@ -84,27 +84,27 @@ jobs:
     - name: Download ub2004 pkg
       uses: actions/download-artifact@v4
       with:
-        name: rfc7030-est-client.ubuntu2004.deb
+        name: rfc7030-est-client.ubuntu20.04.deb
 
     - name: Download ub2204
       uses: actions/download-artifact@v4
       with:
-        name: rfc7030-est-client.ubuntu2204 
+        name: rfc7030-est-client.ubuntu22.04 
 
     - name: Download ub2204 pkg
       uses: actions/download-artifact@v4
       with:
-        name: rfc7030-est-client.ubuntu2204.deb 
+        name: rfc7030-est-client.ubuntu22.04.deb 
 
     - name: Download ub2404
       uses: actions/download-artifact@v4
       with:
-        name: rfc7030-est-client.ubuntu2404
+        name: rfc7030-est-client.ubuntu24.04
 
     - name: Download ub2404 pkg
       uses: actions/download-artifact@v4
       with:
-        name: rfc7030-est-client.ubuntu2404.deb
+        name: rfc7030-est-client.ubuntu24.04.deb
 
     - name: Release
       uses: softprops/action-gh-release@v2
@@ -115,12 +115,12 @@ jobs:
         files: |
           ./rfc7030-est-client.debian11.deb
           ./rfc7030-est-client.debian12.deb
-          ./rfc7030-est-client.ubuntu2004.deb
-          ./rfc7030-est-client.ubuntu2204.deb
-          ./rfc7030-est-client.ubuntu2404.deb
+          ./rfc7030-est-client.ubuntu20.04.deb
+          ./rfc7030-est-client.ubuntu22.04.deb
+          ./rfc7030-est-client.ubuntu24.04.deb
           ./rfc7030-est-client.debian11
           ./rfc7030-est-client.debian12
-          ./rfc7030-est-client.ubuntu2004
-          ./rfc7030-est-client.ubuntu2204
-          ./rfc7030-est-client.ubuntu2404
+          ./rfc7030-est-client.ubuntu20.04
+          ./rfc7030-est-client.ubuntu22.04
+          ./rfc7030-est-client.ubuntu24.04
 
