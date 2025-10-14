@@ -5,7 +5,7 @@
 
 set -e
 
-if [ $# -ne 7 ]; then
+if [ $# -ne 8 ]; then
     echo "Usage: $0 <csr_directory> <est_server_url> <est_server_port> <p12_filename> <p12_pin> <label> <ca_chain_file> <disable_rfc8951>"
     echo "Example: $0 /path/to/csr/files testrfc7030.com 8443 preenrollment.p12 12345 server1 ca-chain.pem 1"
     exit 1
