@@ -51,6 +51,7 @@ launch_est_client() {
         "$EST_CLIENT" \
             -s "$EST_SERVER" \
             -p "$EST_PORT" \
+            -u \
             --label "$LABEL" \
             --server-chain "$CA_CHAIN_FILE" \
             --csr "$csr_file" \
@@ -63,7 +64,6 @@ launch_est_client() {
         "$EST_CLIENT" \
             -s "$EST_SERVER" \
             -p "$EST_PORT" \
-            -u \
             --label "$LABEL" \
             --server-chain "$CA_CHAIN_FILE" \
             --csr "$csr_file" \
