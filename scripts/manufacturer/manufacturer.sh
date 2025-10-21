@@ -73,10 +73,21 @@ launch_est_client() {
             --output-crt "${csr_name}_certificate.pem" \
             enroll
     fi
+
+    if [ -f ${csr_name}_certificate.pem ]; then
+        mv ${csr_name}_certificate.pem output/
+        mv ${csr_name}_cachain.pem output/
+        mv "$csr_file" output/
+        return 0
+    else
+        echo "Failure: Certificate not created for $csr_name."
+        return 1
+    fi
 }
 
 
 # Main processing
+mkdir -p output
 csr_files=$(find "$CSR_DIR" -name "*.csr" -type f)
 
 for csr_file in $csr_files; do
@@ -93,6 +104,8 @@ for csr_file in $csr_files; do
     }
     
     launch_est_client "$csr_file" "$p12_file" || echo "Failed: $csr_name"
+
+    sleep 5
 done
 
 echo "Completed!"
