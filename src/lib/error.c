@@ -14,10 +14,11 @@ void est_error_update(ESTError_t *err, const char *new_message, ...) {
     size_t concat_len = strlen(err->human) + strlen(new_human) + strlen(". ");
     size_t avail_len = EST_ERROR_MSG_LEN - strlen(err->human);
     if(concat_len > EST_ERROR_MSG_LEN) {
+        va_end(args);
         return;
     }
 
-    strcat(err->human, ". ");
+    strncat(err->human, ". ", avail_len);
     strncat(err->human, new_human, avail_len);
 
     va_end(args);

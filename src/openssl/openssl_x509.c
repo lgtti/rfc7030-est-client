@@ -7,6 +7,13 @@ ESTPKCS7_t * x509_pkcs7_parse(byte_t *b64, int b64_bytes_len, ESTError_t *err) {
 
     /* EVP_DecodeBlock don't work with a PEM formatted divided by \n, so we remove all \n characters*/
     byte_t *b64_singleline = (byte_t *)malloc(b64_bytes_len);
+    if (b64_singleline == NULL)
+    {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_PKCS7_PREPARE, ERR_get_error(), "Failed to allocate memory for pkcs7 singleline");
+        oss_print_error();
+        free(p7der);
+        return NULL;
+    }
     int singleline_idx = 0;
     for(int i = 0; i < b64_bytes_len; i++) {
         if(b64[i] != '\n' && b64[i] != '\r') {
@@ -75,11 +82,11 @@ size_t x509_pkcs7_get_certificates(ESTPKCS7_t *p7, ESTCertificate_t ***output, E
     if(certs == NULL) {
         LOG_ERROR(("Invalid pkcs7 nid found: %d\n", nid))
         est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_PKCS7_NOCERTS_SECTION, 0, "Invalid p7 type nid.");
-        return -1;
+        return EST_ERROR;
     }
 
     int numcerts = sk_X509_num(certs);
-    if(numcerts == 0) {
+    if(numcerts <= 0) {
         // nocertificates found in this PKCS7
         return 0;
     }
@@ -93,7 +100,7 @@ size_t x509_pkcs7_get_certificates(ESTPKCS7_t *p7, ESTCertificate_t ***output, E
     }
 
     *output = (ESTCertificate_t **)array;
-    return numcerts;
+    return (size_t)numcerts;
 }
 
 ESTCertificate_t * x509_pkcs7_get_first_certificate(ESTPKCS7_t *p7, size_t *len, ESTError_t *err) {

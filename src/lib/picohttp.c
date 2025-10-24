@@ -21,6 +21,11 @@ ESTHttp_Ctx_t * picohttp_initialize(TransportInterface_t *tint, const ESTAuthDat
     LOG_INFO(("http init\n"))
 
     PicoHttp_Ctx_t *ctx = (PicoHttp_Ctx_t *)malloc(sizeof(PicoHttp_Ctx_t));
+    if (ctx == NULL)
+    {
+        LOG_ERROR(("Failed to allocate memory for PicoHttp_Ctx_t\n"))
+        return NULL;
+    }
     memset(ctx, 0, sizeof(PicoHttp_Ctx_t));
     ctx->tint = tint;
 
@@ -110,40 +115,41 @@ bool_t picohttp_send(ESTHttp_Ctx_t *ctx, ESTHttp_ReqMetadata_t *request_metadata
     char req[HTTP_REQ_MAX_LEN];
 
     // Create initial http request part - method
-    strcpy(op, request_metadata->operation == HTTP_POST ? PICO_HTTP_POST : PICO_HTTP_GET);
-
+    snprintf(op, sizeof(op), "%s", request_metadata->operation == HTTP_POST ? PICO_HTTP_POST : PICO_HTTP_GET);
+    
     // Start creation of the request
-    strcpy(req, op);
-    strcat(req, request_metadata->path);
-    strcat(req, http_ver);
-    strcat(req, connection);
+    strncpy(req, op, sizeof(req) - 1);
+    strncat(req, request_metadata->path, sizeof(req) - strlen(req) - 1);
+    strncat(req, http_ver, sizeof(req) - strlen(req) - 1);
+    strncat(req, connection, sizeof(req) - strlen(req) - 1);
 
     // Add all headers (its ok to have the last header terminating with \r\n)
     for(int i = 0; i < request_metadata->headers_len; i++) {
-        strcat(req, request_metadata->headers[i].name);
-        strcat(req, ": ");
-        strcat(req, request_metadata->headers[i].value);
-        strcat(req, "\r\n");
+        strncat(req, request_metadata->headers[i].name, sizeof(req) - strlen(req) - 1);
+        strncat(req, ": ", sizeof(req) - strlen(req) - 1);
+        strncat(req, request_metadata->headers[i].value, sizeof(req) - strlen(req) - 1);;
+        strncat(req, "\r\n", sizeof(req) - strlen(req) - 1);
     }
 
     // Configure basic auth for this request
     if(pico_ctx->auth != NULL) {
-        strcat(req, authorization);
-        strcat(req, pico_ctx->auth->b64secret);
-        strcat(req, "\r\n");
+        strncat(req, authorization, sizeof(req) - strlen(req) - 1);
+        strncat(req, pico_ctx->auth->b64secret, sizeof(req) - strlen(req) - 1);
+        strncat(req, "\r\n", sizeof(req) - strlen(req) - 1);
     }
 
     /* We have some body in the request, so add the correct header plus the body itself. */
     if(body_len > 0) {
-        sprintf(content, content_len, (int)body_len);
-        strcat(req, content);
+        snprintf(content, sizeof(content), content_len, (int)body_len);
+        strncat(req, content, sizeof(req) - strlen(req) - 1);
         // add trailing last \r\n as requested by http;
-        strcat(req, "\r\n");
-        strcat(req, body);
+        strncat(req, "\r\n", sizeof(req) - strlen(req) - 1);
+        strncat(req, body, sizeof(req) - strlen(req) - 1);
     } else {
         // add trailing last \r\n as requested by http; no body
-        strcat(req, "\r\n");
+        strncat(req, "\r\n", sizeof(req) - strlen(req) - 1);
     }
+    req[sizeof(req) - 1] = '\0';
 
     // Remove C string terminator
     size_t req_len_raw = strlen(req);

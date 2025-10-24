@@ -31,6 +31,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     */
     if(!http->send(ctx->http, httpReq, NULL, 0, &respMetadata, err)) {
         est_error_update(err, "Failed to send cacerts http request");
+        http->send_free(ctx->http, &respMetadata);
         return NULL;
     }
 
@@ -48,6 +49,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     if(respMetadata.status != 200) {
         est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_CACERTS_HTTP_KO, 0,
             "Invalid http status code %d", respMetadata.status);
+        http->send_free(ctx->http, &respMetadata);
         return NULL;
     }
 
@@ -64,8 +66,10 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     
     VerifyState_t states[CACERTS_VERIFY_STATE_NUM];
     memset(states, 0, sizeof(states));
-    strcpy(states[0].header.name, HTTP_HEADER_CONTENT_TYPE);
-    strcpy(states[0].header.value, HTTP_HEADER_CONTENT_TYPE_VAL);
+
+    snprintf(states[0].header.name, sizeof(states[0].header.name), "%s", HTTP_HEADER_CONTENT_TYPE);
+    snprintf(states[0].header.value, sizeof(states[0].header.value), "%s", HTTP_HEADER_CONTENT_TYPE_VAL);
+    snprintf(states[0].alternative, sizeof(states[0].alternative), "%s", HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_RFC8951);
 
     if(!http_verify_response_compliance(&respMetadata, states, CACERTS_VERIFY_STATE_NUM, err)) {
         return EST_FALSE;
@@ -78,6 +82,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     */
     if(respMetadata.body_len == 0) {
         est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_NOBODY, 0, "No bytes found in HTTP response");
+        http->send_free(ctx->http, &respMetadata);
         return NULL;
     }
 
@@ -88,6 +93,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     ESTPKCS7_t *p7 = x509->pkcs7_parse(respMetadata.body, respMetadata.body_len, err);
     if(!p7) {
         est_error_update(err, "Failed to parse http request body in pkcs7 form");
+        http->send_free(ctx->http, &respMetadata);
         return NULL;
     }
 
@@ -116,7 +122,7 @@ static bool_t verify_cacerts_chain(ESTX509Interface_t *x509, ESTCaCerts_Info_t *
         bool_t self_signed = EST_FALSE;
         if(!x509->certificate_is_self_signed(crt, &self_signed, err)) {
             x509->certificate_store_free(&trusted_store);
-            est_error_update(err, "CAcerts failure during implicit TA creation");
+            est_error_update(err, "CAcerts failure during validate self sign");
             return EST_FALSE;
         }
 
@@ -176,7 +182,7 @@ bool_t est_cacerts(ESTClient_Ctx_t *ctx, ESTCaCerts_Info_t *output, ESTError_t *
         use_label = EST_TRUE; 
     }
 
-    sprintf(path, 
+    snprintf(path, path_max_len, 
         use_label ? EST_HTTP_PATH_CACERTS : EST_HTTP_PATH_CACERTS_NOLABEL, 
         ctx->options.label);
 
@@ -188,12 +194,14 @@ bool_t est_cacerts(ESTClient_Ctx_t *ctx, ESTCaCerts_Info_t *output, ESTError_t *
 
     req.headers_len = 3;
 
-    strcpy(req.headers[0].name, "User-Agent");
-    strcpy(req.headers[0].value, EST_LIB_VERSION);
-    strcpy(req.headers[1].name, "Host");
-    strcpy(req.headers[1].value, ctx->host);
-    strcpy(req.headers[2].name, "Accept");
-    strcpy(req.headers[2].value, "*/*");
+    snprintf(req.headers[0].name, sizeof(req.headers[0].name), "%s", "User-Agent");  
+    snprintf(req.headers[0].value, sizeof(req.headers[0].value), "%s", EST_LIB_VERSION);  
+
+    snprintf(req.headers[1].name, sizeof(req.headers[1].name), "%s", "Host");  
+    snprintf(req.headers[1].value, sizeof(req.headers[1].value), "%s", ctx->host);  
+
+    snprintf(req.headers[2].name, sizeof(req.headers[2].name), "%s", "Accept");  
+    snprintf(req.headers[2].value, sizeof(req.headers[2].value), "%s", "*/*");
     
     ESTPKCS7_t *p7 = make_http_request(ctx, &req, err);
     if(!p7) {
@@ -203,7 +211,7 @@ bool_t est_cacerts(ESTClient_Ctx_t *ctx, ESTCaCerts_Info_t *output, ESTError_t *
 
     // Retrieve certificates from pkcs7
     ESTCertificate_t **p7certificates;
-    size_t p7certificates_len = x509->pkcs7_get_certificates(p7, &p7certificates, err);
+    int p7certificates_len = x509->pkcs7_get_certificates(p7, &p7certificates, err);
 
     // Release pkcs7 memory because we only need certificates.
     x509->pkcs7_free(p7);

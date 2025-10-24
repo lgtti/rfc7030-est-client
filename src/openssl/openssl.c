@@ -70,6 +70,10 @@ void oss_load_implicit_ta(const char *chain_pem, ESTClient_Options_t *opts) {
 
     size_t chain_mem_len = 100; // very very large, impossibile to have a huge chain like this!
     opts->chain = (ESTCertificate_t **)malloc(sizeof(ESTCertificate_t *) * chain_mem_len);
+    if (opts->chain == NULL) {
+        LOG_ERROR(("Memory allocation failed\n"))
+        exit(EXIT_FAILURE);
+    }
     opts->chain_len = 0;
 
     X509 *crt = NULL;

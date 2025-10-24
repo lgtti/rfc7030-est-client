@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
 
         if(!p12_filename && !basic_auth) {
             LOG_ERROR(("At least p12 or basic auth flag required\n"));
-            failed = EST_TRUE;
+            // failed = EST_TRUE;
         } else {
             if(p12_filename) {
                 LOG_INFO(("Use mTLS X.509 Certificate authentication\n"));

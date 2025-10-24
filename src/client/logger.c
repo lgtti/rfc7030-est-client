@@ -12,11 +12,17 @@ static void _log(const char * level, const char * m, va_list args) {
     time_t timer = time(NULL);
     char time_buffer[64];
     tm_info = localtime(&timer);
+    if (tm_info == NULL) {
+        return;
+    }
     strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S %d-%m-%Y", tm_info);
 
     char *msg = malloc(strlen(m) + 1024);
-    sprintf(msg, "%s -- %s: ", time_buffer, level);
-    strcat(msg, m);
+    if (msg == NULL)
+    {
+        return;
+    }
+    snprintf(msg, strlen(m) + 1024, "%s -- %s: %s", time_buffer, level, m);
 
     vprintf(msg, args);
     fflush(stdout);

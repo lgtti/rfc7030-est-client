@@ -173,11 +173,11 @@ ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len,
     }
     
     if(renew) {
-        sprintf(path, 
+        snprintf(path, path_max_len,
             use_label ? EST_HTTP_PATH_SIMPLEREENROLL : EST_HTTP_PATH_SIMPLEREENROLL_NOLABEL, 
             ctx->options.label);
     } else {
-        sprintf(path, 
+        snprintf(path, path_max_len,
             use_label ? EST_HTTP_PATH_SIMPLEENROLL : EST_HTTP_PATH_SIMPLEENROLL_NOLABEL, 
             ctx->options.label);
     }
@@ -192,11 +192,11 @@ ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len,
     */
     httpReq.headers_len = 5;
 
-    strcpy(httpReq.headers[0].name, "User-Agent");
-    strcpy(httpReq.headers[0].value, EST_LIB_VERSION);
+    snprintf(httpReq.headers[0].name, sizeof(httpReq.headers[0].name), "%s", "User-Agent");  
+    snprintf(httpReq.headers[0].value, sizeof(httpReq.headers[0].value), "%s", EST_LIB_VERSION);  
 
-    strcpy(httpReq.headers[1].name, "Host");
-    strcpy(httpReq.headers[1].value, ctx->host);
+    snprintf(httpReq.headers[1].name, sizeof(httpReq.headers[1].name), "%s", "Host");  
+    snprintf(httpReq.headers[1].value, sizeof(httpReq.headers[1].value), "%s", ctx->host);
 
     /* set simpleenroll request type
     RFC: 
@@ -204,13 +204,14 @@ ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len,
     format of the message is as specified in [RFC5967] with a Content-
     Transfer-Encoding of "base64" [RFC2045].
     */
-    strcpy(httpReq.headers[2].name, "Content-Type");
-    strcpy(httpReq.headers[2].value, "application/pkcs10");
-    strcpy(httpReq.headers[3].name, "Content-Transfer-Encoding");
-    strcpy(httpReq.headers[3].value, "base64");
+    snprintf(httpReq.headers[2].name, sizeof(httpReq.headers[2].name), "%s", "Content-Type");  
+    snprintf(httpReq.headers[2].value, sizeof(httpReq.headers[2].value), "%s", "application/pkcs10");  
 
-    strcpy(httpReq.headers[4].name, "Accept");
-    strcpy(httpReq.headers[4].value, "*/*");
+    snprintf(httpReq.headers[3].name, sizeof(httpReq.headers[3].name), "%s", "Content-Transfer-Encoding");  
+    snprintf(httpReq.headers[3].value, sizeof(httpReq.headers[3].value), "%s", "base64");  
+
+    snprintf(httpReq.headers[4].name, sizeof(httpReq.headers[4].name), "%s", "Accept");  
+    snprintf(httpReq.headers[4].value, sizeof(httpReq.headers[4].value), "%s", "*/*");
 
 
     ESTPKCS7_t *p7 = make_http_request(ctx, &httpReq, req, req_len, err);
