@@ -31,6 +31,7 @@ typedef struct RFC7030_Enroll_Options {
 }RFC7030_Enroll_Options_t;
 
 void rfc7030_init();
+void rfc7030_free();
 
 RFC7030_Subsystem_Config_t * rfc7030_get_config();
 

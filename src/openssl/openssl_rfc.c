@@ -1,9 +1,12 @@
 #include "internal.h"
 
+#define CSR_MAX_LEN 4096
+
 static bool_t load_csr(void *ctx, const char *tlsunique, size_t tlsunique_len, byte_t *csr, size_t *csr_len, ESTError_t *err) {
     char *csr_ctx = (char *)ctx;
-    strcpy(csr, csr_ctx);
+    snprintf(csr, CSR_MAX_LEN, "%s", csr_ctx);
     *csr_len = strlen(csr_ctx);
+
     return EST_TRUE;
 }
 
@@ -16,8 +19,8 @@ bool_t parse_p12(const char *p12, size_t p12_len, const char *password, ESTAuthD
     BIO_write(mem, p12, p12_len);
 
     PKCS12 *p12ssl = d2i_PKCS12_bio(mem, NULL);
-    EVP_PKEY *pkey;
-    X509 *cert;
+    EVP_PKEY *pkey = EVP_PKEY_new();
+    X509 *cert = X509_new();
     if(PKCS12_parse(p12ssl, password, &pkey, &cert, NULL) == 0) {
         est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, ERR_get_error(), "Failed to prepare enrollment, failed to parse P12");
         oss_print_error();
@@ -53,6 +56,11 @@ void rfc7030_init() {
     ERR_load_crypto_strings();
 
     load_legacy_module();
+}
+
+// Free crypto Library modules resources
+void rfc7030_free() {
+    free_legacy_module();
 }
 
 static ESTTLSInterface_t tls = {
@@ -100,8 +108,9 @@ bool_t rfc7030_request_cachain(RFC7030_Options_t *config,
     est_opts.tlsInterface = &tls;
     est_opts.x509Interface = &x509;
     
-    if(config->label) {
-        strncpy(est_opts.label, config->label, EST_CLIENT_LABEL_LEN);
+    if(config->label) 
+    {
+        snprintf(est_opts.label, sizeof(est_opts.label), "%s", config->label);
     }
     
     if(config->cachain) {
@@ -115,6 +124,7 @@ bool_t rfc7030_request_cachain(RFC7030_Options_t *config,
 
     if(!est_client_cacerts(&est_opts, config->host, config->port, &cacerts_response, err)) {
         oss_free_implicit_ta(&est_opts);
+        est_client_cacerts_free(&cacerts_response);
         return EST_FALSE;
     }
 
@@ -126,7 +136,7 @@ bool_t rfc7030_request_cachain(RFC7030_Options_t *config,
         char buf[5000];
         ca_idx_pt = oss_crt2pem_noterminator((X509 *)cacerts_response.cacerts.chain[i], buf, ca_len); 
         buf[ca_idx_pt] = '\0';
-        strcat(ca, buf);
+        strncat(ca, buf, ca_len - strlen(ca) - 1);
     }
 
     est_client_cacerts_free(&cacerts_response);
@@ -157,8 +167,9 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
         est_opts.strict8951 = EST_TRUE;
     }
     
-    if(config->opts.label) {
-        strncpy(est_opts.label, config->opts.label, EST_CLIENT_LABEL_LEN);
+    if(config->opts.label) 
+    {
+        snprintf(est_opts.label, sizeof(est_opts.label), "%s", config->opts.label);
     }
     
     if(config->opts.cachain) {
@@ -177,7 +188,9 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
             &config->auth, 
             config->csr_ctx, 
             &enroll_output, err)) {
-
+            
+            LOG_DEBUG(("ReEnroll completed with error\n"))
+            est_client_enroll_free(&enroll_output);
             oss_free_implicit_ta(&est_opts);
             return EST_FALSE;
         }
@@ -190,6 +203,7 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
             &enroll_output, err)) {
 
             LOG_DEBUG(("Enroll completed with error\n"))
+            est_client_enroll_free(&enroll_output);
             oss_free_implicit_ta(&est_opts);
             return EST_FALSE;
         }
@@ -202,10 +216,13 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
     enrolled[len] = '\0';
 
     int ca_idx_pt = 0;
+    ca[0] = '\0';
     for(int i = 0; i < enroll_output.cacerts.chain_len; i++) {
-        ca_idx_pt = oss_crt2pem_noterminator((X509 *)enroll_output.cacerts.chain[i], ca + ca_idx_pt, ca_len);  
+        char buf[5000];
+        ca_idx_pt = oss_crt2pem_noterminator((X509 *)enroll_output.cacerts.chain[i], buf, ca_len); 
+        buf[ca_idx_pt] = '\0';
+        strncat(ca, buf, ca_len - strlen(ca) - 1);
     }
-    ca[ca_idx_pt] = '\0';
 
     est_client_enroll_free(&enroll_output);
     return EST_TRUE;

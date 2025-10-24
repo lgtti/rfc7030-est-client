@@ -65,7 +65,7 @@ static void create_host(const char *host, int port, char *out) {
         LOG_DEBUG(("Use default header specified port %d\n", port))
     }
 
-    sprintf(out, "%s:%d", host, port);
+    snprintf(out, EST_HTTP_HOST_PORT_LEN, "%s:%d", host, port);
 }
 
 /* 
@@ -84,7 +84,7 @@ bool_t est_connect(ESTClient_Ctx_t *ctx, const char *host, int port, const ESTAu
 
     /* Save host (without port) to the context, 
     we must reuse it in the Host HTTP Header. */
-    strcpy(ctx->host, host);
+    snprintf(ctx->host, sizeof(ctx->host), "%s", host);
 
     if(!ctx->options.tlsInterface->initialize(host_port, host, auth, ctx->options.chain, ctx->options.chain_len, 
         ctx->options.skip_tls_verify, &ctx->transport, err)) {

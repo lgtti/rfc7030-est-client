@@ -9,8 +9,8 @@ typedef struct OpenSSL_NetworkContext {
 
 bool_t tls_unique(TransportInterface_t  *tint, char *output, size_t *len, ESTError_t *err) {
     OpenSSL_NetworkContext_t *oss_ctx = (OpenSSL_NetworkContext_t *)tint->pNetworkContext;
-    strcpy(output, oss_ctx->tlsunique);
-    *len = strlen(oss_ctx->tlsunique);
+    snprintf(output, EST_TLS_UNIQUE_LEN, "%s", oss_ctx->tlsunique);
+    *len = strnlen(output, EST_TLS_UNIQUE_LEN - 1);
     return EST_TRUE;
 }
 
@@ -94,7 +94,12 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
         SSL_CTX_use_certificate(ctx, (X509 *)auth->certAuth.certificate);
         SSL_CTX_use_PrivateKey(ctx, (EVP_PKEY *)auth->certAuth.privateKey);
     }
+
+    // Set Min TLS version
+    LOG_DEBUG(("Set min tls version to 1.2\n"))
     
+    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+
     LOG_DEBUG(("Prepare connect\n"))
     BIO *conn = BIO_new_ssl_connect(ctx);
     if(!conn) {
@@ -134,7 +139,7 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
     byte_t tlsunique_output[EST_TLS_UNIQUE_LEN];
     memset(tlsunique_output, 0, sizeof(tlsunique_output));
 
-    byte_t buf[EST_TLS_UNIQUE_LEN];
+    byte_t buf[EST_TLS_UNIQUE_LEN] = {0};
     size_t buf_len = SSL_get_finished(ssl, buf, EST_TLS_UNIQUE_LEN);
     if(buf_len > 0) {
         BIO *b64 = BIO_new(BIO_f_base64());
@@ -192,10 +197,17 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
     LOG_DEBUG(("Configure internal openssl saved context\n"))
 
     OpenSSL_NetworkContext_t *nctx = (OpenSSL_NetworkContext_t *)malloc(sizeof(OpenSSL_NetworkContext_t));
+    if(!nctx) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_TLS, EST_ERROR_TLS_SSL_CTX, ERR_get_error(), "Failed to init tls, fail to allocate memory for network context");
+        oss_print_error();
+        BIO_free_all(conn);
+        SSL_CTX_free(ctx);
+        return EST_FALSE;
+    }
     nctx->ctx = ctx;
     nctx->ssl = ssl; 
     nctx->conn = conn;
-    strcpy(nctx->tlsunique, tlsunique_output);
+    snprintf(nctx->tlsunique, EST_TLS_UNIQUE_LEN, "%s", tlsunique_output);
 
     /* In this client implementation openssl is the network low-level layer of the stack.
         If your HTTP library owns the TLS management and the socket management, 
@@ -208,7 +220,7 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
 }
 
 void tls_free(TransportInterface_t *ctx) {
-    if(ctx->pNetworkContext) {
+    if(ctx != NULL && ctx->pNetworkContext != NULL) {
         OpenSSL_NetworkContext_t *octx = (OpenSSL_NetworkContext_t *)ctx->pNetworkContext;
         if(octx->conn) {
             BIO_free_all(octx->conn);
