@@ -10,7 +10,6 @@ set_property( GLOBAL PROPERTY USE_FOLDERS ON )
 # Use C99.
 set( CMAKE_C_STANDARD 99 )
 set( CMAKE_C_STANDARD_REQUIRED ON )
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
 
 # Do not allow in-source build.
 if( ${PROJECT_SOURCE_DIR} STREQUAL ${PROJECT_BINARY_DIR} )
