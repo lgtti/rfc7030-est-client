@@ -51,7 +51,7 @@ jobs:
         docker rm temp-container
 
     - name: upload binary
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: rfc7030-est-client.${{inputs.os}}${{inputs.version}}
         path: /usr/local/bin/rfc7030-est-client
@@ -67,7 +67,7 @@ jobs:
         dpkg-deb --build . ../rfc7030-est-client.${{inputs.os}}${{inputs.version}}.deb
 
     - name: upload package
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: rfc7030-est-client.${{inputs.os}}${{inputs.version}}.deb
         path: ./deploy/rfc7030-est-client.${{inputs.os}}${{inputs.version}}.deb
