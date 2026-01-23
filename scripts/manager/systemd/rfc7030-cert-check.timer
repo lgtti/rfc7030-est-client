@@ -1,0 +1,14 @@
+[Unit]
+Description=RFC 7030 EST Certificate Check Timer
+Documentation=https://www.rfc-editor.org/rfc/rfc7030.html
+
+[Timer]
+# Run daily at 03:00
+OnCalendar=*-*-* 03:00:00
+# Add random delay up to 1 hour to avoid thundering herd on EST server
+RandomizedDelaySec=3600
+# Run immediately if the last scheduled run was missed (e.g., system was off)
+Persistent=true
+
+[Install]
+WantedBy=timers.target

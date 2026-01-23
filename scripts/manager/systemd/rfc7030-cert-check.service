@@ -1,0 +1,31 @@
+[Unit]
+Description=RFC 7030 EST Certificate Enrollment/Renewal
+Documentation=https://www.rfc-editor.org/rfc/rfc7030.html
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/rfc7030-cert-check
+
+# Environment configuration
+# Set RFC7030_HOME to the directory containing .rfc7030 config file
+# This can be overridden via drop-in files in /etc/systemd/system/rfc7030-cert-check.service.d/
+Environment="RFC7030_HOME=/etc/rfc7030"
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+
+# Allow write access to certificate directories (customize as needed)
+# ReadWritePaths=/path/to/certificates
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rfc7030-cert-check
+
+[Install]
+WantedBy=multi-user.target

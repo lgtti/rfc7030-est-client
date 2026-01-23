@@ -1,0 +1,63 @@
+# RFC 7030 EST Client Configuration
+# Copy this file to $RFC7030_HOME/.rfc7030 and customize the values
+#
+# This file is sourced by the rfc7030-cert-check script
+
+# =============================================================================
+# EST Server Configuration
+# =============================================================================
+
+# EST server hostname (without https:// prefix)
+EST_SERVER="est.example.com"
+
+# EST server port
+EST_PORT="8443"
+
+# Path to the EST server certificate chain in PEM format
+# Used to validate the EST server during TLS handshake
+EST_SERVER_CHAIN="/etc/rfc7030/server-chain.pem"
+
+# Optional: Additional path segment in EST endpoints
+# e.g., /.well-known/est/[label]/simpleenroll
+# Leave empty if not needed
+EST_LABEL=""
+
+# =============================================================================
+# Certificate Paths
+# =============================================================================
+
+# Path to the Certificate Signing Request (CSR) in PEM format
+CERT_CSR="/etc/rfc7030/request.csr"
+
+# Path to the private key associated with the CSR
+CERT_KEY="/etc/rfc7030/private.key"
+
+# Path where the enrolled/renewed certificate will be saved
+CERT_CRT="/etc/rfc7030/certificate.crt"
+
+# =============================================================================
+# Authentication for Initial Enrollment
+# =============================================================================
+
+# Path to the P12 file containing the bootstrap/manufacturer certificate
+# This is used ONLY for initial enrollment when CERT_CRT does not exist
+# For renewal, a temporary P12 is created from CERT_CRT and CERT_KEY
+P12_FILE="/etc/rfc7030/bootstrap.p12"
+
+# Password for the P12 file
+P12_PASSWORD="changeme"
+
+# =============================================================================
+# Renewal Configuration
+# =============================================================================
+
+# Number of days before certificate expiry to trigger renewal
+# The script will renew the certificate if it expires within this many days
+RENEWAL_DAYS=30
+
+# =============================================================================
+# Optional: EST Client Binary
+# =============================================================================
+
+# Path to the rfc7030_est_client binary (default: searches in PATH)
+# EST_CLIENT="/usr/local/bin/rfc7030_est_client"
