@@ -47,6 +47,54 @@ bool_t parse_basicauth(const char *userpassword, ESTAuthData_t *auth, ESTError_t
     return EST_TRUE;
 }
 
+bool_t parse_pem(const char *key, size_t key_len, const char *cert, size_t cert_len, ESTAuthData_t *auth, ESTError_t *err) {
+    LOG_INFO(("Prepare enroll with PEM key len=%d cert len=%d\n", (int)key_len, (int)cert_len))
+
+    // Load private key from PEM
+    BIO *key_bio = BIO_new_mem_buf(key, key_len);
+    if(!key_bio) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, ERR_get_error(), "Failed to create BIO for private key");
+        oss_print_error();
+        return EST_FALSE;
+    }
+
+    EVP_PKEY *pkey = PEM_read_bio_PrivateKey(key_bio, NULL, NULL, NULL);
+    BIO_free(key_bio);
+
+    if(!pkey) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, ERR_get_error(), "Failed to parse PEM private key");
+        oss_print_error();
+        return EST_FALSE;
+    }
+
+    // Load certificate from PEM
+    BIO *cert_bio = BIO_new_mem_buf(cert, cert_len);
+    if(!cert_bio) {
+        EVP_PKEY_free(pkey);
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, ERR_get_error(), "Failed to create BIO for certificate");
+        oss_print_error();
+        return EST_FALSE;
+    }
+
+    X509 *x509_cert = PEM_read_bio_X509(cert_bio, NULL, NULL, NULL);
+    BIO_free(cert_bio);
+
+    if(!x509_cert) {
+        EVP_PKEY_free(pkey);
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, ERR_get_error(), "Failed to parse PEM certificate");
+        oss_print_error();
+        return EST_FALSE;
+    }
+
+    // Configure auth structure to use Certificate type authentication
+    auth->type = EST_AUTH_TYPE_CERT;
+    auth->certAuth.certificate = (ESTCertificate_t *)x509_cert;
+    auth->certAuth.privateKey = (ESTPrivKey_t *)pkey;
+
+    LOG_INFO(("PEM key and certificate loaded correctly, mTLS authentication configured\n"))
+    return EST_TRUE;
+}
+
 void rfc7030_init() {
     OpenSSL_add_all_digests();
     SSL_load_error_strings();
@@ -78,6 +126,7 @@ static ESTX509Interface_t x509 = {
 static RFC7030_Subsystem_Config_t rfcConfig = {
     .parse_basicauth = parse_basicauth,
     .parse_p12 = parse_p12,
+    .parse_pem = parse_pem,
     .tls = &tls,
     .x509 = &x509,
     .get_csr = load_csr

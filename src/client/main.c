@@ -166,6 +166,13 @@ int main(int argc, char *argv[]) {
     const char *basic_auth = NULL;
     const char *output_ca = NULL;
     const char *output_crt = NULL;
+    const char *input_key_filename = NULL;
+    const char *input_cert_filename = NULL;
+
+    char key_content[5000];
+    size_t key_content_len = 0;
+    char cert_content[5000];
+    size_t cert_content_len = 0;
 
     cag_option_context context;
     char identifier;
@@ -216,6 +223,12 @@ int main(int argc, char *argv[]) {
             break;
         case 'z':
             output_crt = cag_option_get_value(&context);
+            break;
+        case 'k':
+            input_key_filename = cag_option_get_value(&context);
+            break;
+        case 'e':
+            input_cert_filename = cag_option_get_value(&context);
             break;
         case 'u':
             disable_strict_8951 = EST_TRUE;
@@ -294,8 +307,8 @@ int main(int argc, char *argv[]) {
             rfcConfig.csr_ctx = (CsrCtx_t *)csr_content;
         }
 
-        if(!p12_filename && !basic_auth) {
-            LOG_ERROR(("At least p12 or basic auth flag required\n"));
+        if(!p12_filename && !basic_auth && !(input_key_filename && input_cert_filename)) {
+            LOG_ERROR(("At least p12, basic auth, or input-key+input-cert required\n"));
             failed = EST_TRUE;
         } else {
             if(p12_filename) {
@@ -304,6 +317,15 @@ int main(int argc, char *argv[]) {
                 p12_content_len = read_file(p12_filename, "rb", p12_content);
                 if(!estCfg->parse_p12(p12_content, p12_content_len, p12_password, &rfcConfig.auth, &err)) {
                     LOG_ERROR(("Invalid p12 (code=%d,native=%d,subsystem=%d): %s\n", err.code, err.native, err.subsystem, err.human));
+                    failed = EST_TRUE;
+                }
+            } else if(input_key_filename && input_cert_filename) {
+                LOG_INFO(("Use mTLS with PEM key and certificate\n"));
+
+                key_content_len = read_file(input_key_filename, "rt", key_content);
+                cert_content_len = read_file(input_cert_filename, "rt", cert_content);
+                if(!estCfg->parse_pem(key_content, key_content_len, cert_content, cert_content_len, &rfcConfig.auth, &err)) {
+                    LOG_ERROR(("Invalid PEM key/cert (code=%d,native=%d,subsystem=%d): %s\n", err.code, err.native, err.subsystem, err.human));
                     failed = EST_TRUE;
                 }
             } else if(basic_auth) {

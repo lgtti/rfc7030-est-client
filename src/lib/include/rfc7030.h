@@ -5,12 +5,14 @@
 
 typedef bool_t (*parse_p12_t)(const char *p12, size_t p12_len, const char *password, ESTAuthData_t *auth, ESTError_t *err);
 typedef bool_t (*parse_basicauth_t)(const char *userpassword, ESTAuthData_t *auth, ESTError_t *err);
+typedef bool_t (*parse_pem_t)(const char *key, size_t key_len, const char *cert, size_t cert_len, ESTAuthData_t *auth, ESTError_t *err);
 
 typedef struct RFC7030_Subsystem_Config {
     const ESTTLSInterface_t *tls;
     const ESTX509Interface_t *x509;
     parse_p12_t parse_p12;
     parse_basicauth_t parse_basicauth;
+    parse_pem_t parse_pem;
     est_get_csr_t get_csr;
 }RFC7030_Subsystem_Config_t;
 

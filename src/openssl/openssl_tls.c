@@ -7,6 +7,17 @@ typedef struct OpenSSL_NetworkContext {
     char tlsunique[EST_TLS_UNIQUE_LEN];
 }OpenSSL_NetworkContext_t;
 
+void keylog_cb(const SSL *ssl, const char *line) {
+    const char *path = getenv("SSLKEYLOGFILE");
+    if (path != NULL) {
+        FILE *fp = fopen(path, "a");
+        if (fp != NULL) {
+            fprintf(fp, "%s\n", line);
+            fclose(fp); 
+        }
+    }
+}
+
 bool_t tls_unique(TransportInterface_t  *tint, char *output, size_t *len, ESTError_t *err) {
     OpenSSL_NetworkContext_t *oss_ctx = (OpenSSL_NetworkContext_t *)tint->pNetworkContext;
     strcpy(output, oss_ctx->tlsunique);
@@ -59,6 +70,8 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
     used for all EST communications
     */
     SSL_CTX_set_min_proto_version(ctx, TLS1_1_VERSION);
+
+    SSL_CTX_set_keylog_callback(ctx, keylog_cb);
 
     /*+ Configure the Trusted chain registry 
         used to validate EST Server certificate. 
