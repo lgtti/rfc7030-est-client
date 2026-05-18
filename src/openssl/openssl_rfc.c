@@ -19,8 +19,8 @@ bool_t parse_p12(const char *p12, size_t p12_len, const char *password, ESTAuthD
     BIO_write(mem, p12, p12_len);
 
     PKCS12 *p12ssl = d2i_PKCS12_bio(mem, NULL);
-    EVP_PKEY *pkey = EVP_PKEY_new();
-    X509 *cert = X509_new();
+    EVP_PKEY *pkey = NULL;
+    X509 *cert = NULL;
     if(PKCS12_parse(p12ssl, password, &pkey, &cert, NULL) == 0) {
         est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, ERR_get_error(), "Failed to prepare enrollment, failed to parse P12");
         oss_print_error();
