@@ -107,7 +107,7 @@ jobs:
         name: rfc7030-est-client.ubuntu24.04.deb
 
     - name: Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
