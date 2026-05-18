@@ -69,7 +69,6 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
 
     snprintf(states[0].header.name, sizeof(states[0].header.name), "%s", HTTP_HEADER_CONTENT_TYPE);
     snprintf(states[0].header.value, sizeof(states[0].header.value), "%s", HTTP_HEADER_CONTENT_TYPE_VAL);
-    snprintf(states[0].alternative, sizeof(states[0].alternative), "%s", HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_RFC8951);
 
     if(!http_verify_response_compliance(&respMetadata, states, CACERTS_VERIFY_STATE_NUM, err)) {
         return EST_FALSE;
