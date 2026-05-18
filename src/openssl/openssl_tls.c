@@ -95,11 +95,6 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
         SSL_CTX_use_PrivateKey(ctx, (EVP_PKEY *)auth->certAuth.privateKey);
     }
 
-    // Set Min TLS version
-    LOG_DEBUG(("Set min tls version to 1.2\n"))
-    
-    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
-
     LOG_DEBUG(("Prepare connect\n"))
     BIO *conn = BIO_new_ssl_connect(ctx);
     if(!conn) {
