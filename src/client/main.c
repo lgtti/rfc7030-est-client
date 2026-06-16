@@ -279,6 +279,8 @@ int main(int argc, char *argv[]) {
 
     if(!skip_tls_verify) {
         rfcConfig.opts.cachain = chain_content;
+    } else {
+        LOG_ERROR(("TLS verification DISABLED (--insecure). Not safe for production.\n"))
     }
 
     rfcConfig.opts.label = label;

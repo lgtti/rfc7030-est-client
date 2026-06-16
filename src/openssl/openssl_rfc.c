@@ -106,8 +106,6 @@ bool_t rfc7030_request_cachain(RFC7030_Options_t *config,
     
     if(config->cachain) {
         oss_load_implicit_ta(config->cachain, &est_opts);
-    } else {
-        est_opts.skip_tls_verify = EST_TRUE;
     }
 
     ESTClientCacerts_Ctx_t cacerts_response;
@@ -163,8 +161,6 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
     
     if(config->opts.cachain) {
         oss_load_implicit_ta(config->opts.cachain, &est_opts);
-    } else {
-        est_opts.skip_tls_verify = EST_TRUE;
     }
 
     ESTClientEnroll_Ctx_t enroll_output;
