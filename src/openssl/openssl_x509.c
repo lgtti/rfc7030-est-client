@@ -75,7 +75,7 @@ size_t x509_pkcs7_get_certificates(ESTPKCS7_t *p7, ESTCertificate_t ***output, E
     if(certs == NULL) {
         LOG_ERROR(("Invalid pkcs7 nid found: %d\n", nid))
         est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_PKCS7_NOCERTS_SECTION, 0, "Invalid p7 type nid.");
-        return -1;
+        return 0;
     }
 
     int numcerts = sk_X509_num(certs);
