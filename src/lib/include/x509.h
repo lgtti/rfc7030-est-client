@@ -5,6 +5,8 @@
 #include "error.h"
 #include <stddef.h>
 
+/* Maximum number of certificates allowed in a PKCS7 to prevent DoS */
+#define MAX_PKCS7_CERTIFICATES 64
 
 /* Incomplete type for X.509 certificate.
  This type must refer to a host-specific X.509 implementation privided

@@ -79,13 +79,23 @@ size_t x509_pkcs7_get_certificates(ESTPKCS7_t *p7, ESTCertificate_t ***output, E
     }
 
     int numcerts = sk_X509_num(certs);
-    if(numcerts == 0) {
+    if(numcerts <= 0) {
         // nocertificates found in this PKCS7
+        return 0;
+    }
+
+    /* Cap certificate count to prevent unbounded allocation from untrusted source */
+    if(numcerts > MAX_PKCS7_CERTIFICATES) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_PKCS7_PARSE, 0, "Certificate count exceeds maximum limit");
         return 0;
     }
 
     // Copy all certificates in the response array
     X509 **array = (X509 **)malloc(sizeof(X509 *) * numcerts);
+    if(array == NULL) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_PKCS7_PARSE, 0, "Failed to allocate memory for certificates");
+        return 0;
+    }
 
     for(int i = 0; certs && i < sk_X509_num(certs); i++) {
         X509 *cert = sk_X509_value(certs, i);
