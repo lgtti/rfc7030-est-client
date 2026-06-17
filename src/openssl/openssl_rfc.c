@@ -2,8 +2,16 @@
 
 static bool_t load_csr(void *ctx, const char *tlsunique, size_t tlsunique_len, byte_t *csr, size_t *csr_len, ESTError_t *err) {
     char *csr_ctx = (char *)ctx;
-    strcpy(csr, csr_ctx);
-    *csr_len = strlen(csr_ctx);
+    size_t csr_ctx_len = strlen(csr_ctx);
+    
+    if (csr_ctx_len >= EST_CSR_MAX_LEN) {
+        LOG_ERROR(("CSR length exceeds maximum allowed size\n"))
+        return EST_FALSE;
+    }
+    
+    memcpy(csr, csr_ctx, csr_ctx_len);
+    csr[csr_ctx_len] = '\0';
+    *csr_len = csr_ctx_len;
     return EST_TRUE;
 }
 
