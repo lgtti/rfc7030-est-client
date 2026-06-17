@@ -31,6 +31,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     */
     if(!http->send(ctx->http, httpReq, NULL, 0, &respMetadata, err)) {
         est_error_update(err, "Failed to send cacerts http request");
+        http->send_free(ctx->http, &respMetadata);
         return NULL;
     }
 
@@ -48,6 +49,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     if(respMetadata.status != 200) {
         est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_CACERTS_HTTP_KO, 0,
             "Invalid http status code %d", respMetadata.status);
+        http->send_free(ctx->http, &respMetadata);
         return NULL;
     }
 
@@ -68,6 +70,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     strcpy(states[0].header.value, HTTP_HEADER_CONTENT_TYPE_VAL);
 
     if(!http_verify_response_compliance(&respMetadata, states, CACERTS_VERIFY_STATE_NUM, err)) {
+        http->send_free(ctx->http, &respMetadata);
         return EST_FALSE;
     }
 
@@ -78,6 +81,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     */
     if(respMetadata.body_len == 0) {
         est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_NOBODY, 0, "No bytes found in HTTP response");
+        http->send_free(ctx->http, &respMetadata);
         return NULL;
     }
 
@@ -88,6 +92,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     ESTPKCS7_t *p7 = x509->pkcs7_parse(respMetadata.body, respMetadata.body_len, err);
     if(!p7) {
         est_error_update(err, "Failed to parse http request body in pkcs7 form");
+        http->send_free(ctx->http, &respMetadata);
         return NULL;
     }
 
