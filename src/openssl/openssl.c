@@ -62,6 +62,11 @@ void oss_print_error() {
 }
 
 void oss_load_implicit_ta(const char *chain_pem, ESTClient_Options_t *opts) {
+    if (chain_pem == NULL || opts == NULL) {
+        LOG_ERROR(("CACHAIN or options structure is NULL\n"))
+        exit(EXIT_FAILURE);
+    }
+
     // Load all certificates in CACHAIN (used to validate EST server https endpoint).
     size_t chain_pem_len = strlen(chain_pem);
 
@@ -70,12 +75,21 @@ void oss_load_implicit_ta(const char *chain_pem, ESTClient_Options_t *opts) {
 
     size_t chain_mem_len = 100; // very very large, impossibile to have a huge chain like this!
     opts->chain = (ESTCertificate_t **)malloc(sizeof(ESTCertificate_t *) * chain_mem_len);
+    if (opts->chain == NULL) {
+        LOG_ERROR(("Memory allocation failed\n"))
+        exit(EXIT_FAILURE);
+    }
     opts->chain_len = 0;
 
     X509 *crt = NULL;
     do {
         crt = PEM_read_bio_X509(mem, NULL, NULL, NULL);
         if(crt != NULL) {
+            if(opts->chain_len >= chain_mem_len) {
+                LOG_ERROR(("Certificate chain exceeds maximum of %zu certificates. Discarding excess certificates.\n", chain_mem_len))
+                X509_free(crt);
+                break;
+            }
             opts->chain[opts->chain_len++] = (ESTCertificate_t *)crt;
         }
     } while(crt != NULL);
