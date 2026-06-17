@@ -144,7 +144,7 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
                 BIO_free(b64);
             } else {
                 bio = BIO_push(b64, bio);
-                BIO_write(bio, buf, strlen(buf));
+                BIO_write(bio, buf, buf_len);
                 (void)BIO_flush(bio);
 
                 BUF_MEM *bptr = NULL;
