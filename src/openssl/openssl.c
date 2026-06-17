@@ -116,6 +116,11 @@ int oss_crt2pem_noterminator(X509 *crt, char *pem, size_t pem_len) {
     BIO_get_mem_ptr(mem, &bptr);
     int length = bptr->length;
 
+    if (length < 0 || (size_t) length >= pem_len) {
+        BIO_free(mem);
+        return -1;
+    }
+
     int num = BIO_read(mem, pem, length);
     BIO_free(mem);
     return num;
