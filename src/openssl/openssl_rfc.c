@@ -1,11 +1,17 @@
 #include "internal.h"
 
 static bool_t load_csr(void *ctx, const char *tlsunique, size_t tlsunique_len, byte_t *csr, size_t *csr_len, ESTError_t *err) {
+    if (ctx == NULL || csr == NULL || csr_len == NULL) {
+        LOG_ERROR(("Invalid parameters: ctx, csr, or csr_len is NULL\n"))
+        return EST_FALSE;
+    }
+    
     char *csr_ctx = (char *)ctx;
-    size_t csr_ctx_len = strlen(csr_ctx);
+    // Use strnlen to safely bound length check, avoiding unterminated string scan
+    size_t csr_ctx_len = strnlen(csr_ctx, EST_CSR_MAX_LEN);
     
     if (csr_ctx_len >= EST_CSR_MAX_LEN) {
-        LOG_ERROR(("CSR length exceeds maximum allowed size\n"))
+        LOG_ERROR(("CSR length exceeds maximum allowed size or not null-terminated\n"))
         return EST_FALSE;
     }
     
