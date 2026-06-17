@@ -58,6 +58,8 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
     TLS 1.1 [RFC4346] (or a later version) MUST be
     used for all EST communications
     */
+
+    /* [RFC7525] states TLS 1.1 or earlier should not be use, set min to tls1.2 */
     SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
 
     /*+ Configure the Trusted chain registry 
