@@ -17,8 +17,10 @@ ESTPKCS7_t * x509_pkcs7_parse(byte_t *b64, int b64_bytes_len, ESTError_t *err) {
 
     /* EVP_DecodeBlock don't work with a PEM formatted divided by \n, so we remove all \n characters*/
     byte_t *b64_singleline = (byte_t *)malloc(b64_bytes_len);
-    if (b64_singleline == NULL) {
-        if (err) est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_PKCS7_PREPARE, 0, "Failed to allocate memory for b64_singleline");
+    if (b64_singleline == NULL)
+    {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_PKCS7_PREPARE, ERR_get_error(), "Failed to allocate memory for pkcs7 singleline");
+        oss_print_error();
         free(p7der);
         return NULL;
     }

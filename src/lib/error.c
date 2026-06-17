@@ -10,17 +10,20 @@ void est_error_update(ESTError_t *err, const char *new_message, ...) {
 
     char new_human[EST_ERROR_MSG_LEN];
     vsnprintf(new_human, EST_ERROR_MSG_LEN - 1, new_message, args);
+    va_end(args);
 
-    size_t concat_len = strlen(err->human) + strlen(new_human) + strlen(". ");
-    size_t avail_len = EST_ERROR_MSG_LEN - strlen(err->human);
-    if(concat_len >= EST_ERROR_MSG_LEN) {
+    size_t current_len = strlen(err->human);
+    size_t new_len = strlen(new_human);
+    size_t separator_len = 2; // ". "
+    
+    // Check if result fits
+    if (current_len + separator_len + new_len >= EST_ERROR_MSG_LEN) {
         return;
     }
 
+    // Safe append
     strcat(err->human, ". ");
-    strncat(err->human, new_human, avail_len);
-
-    va_end(args);
+    strcat(err->human, new_human);
 }
 
 void est_error_set(ESTError_t *err, int8_t subsystem, int16_t code, const char *message, ...) {

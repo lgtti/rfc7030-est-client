@@ -1,22 +1,44 @@
 #include "internal.h"
 
 ESTCertificate_t * pf2crt(const char *name) {
+    if (name == NULL)
+    {
+        return NULL;
+    }
     FILE *pf = fopen(name, "rt");
-    return (ESTCertificate_t *)PEM_read_X509(pf, NULL, NULL, NULL);
+    if (!pf) {
+        LOG_ERROR(("Failed to open %s from resource file\n", name))
+        exit(EXIT_FAILURE);
+    }
+    ESTCertificate_t *cert = (ESTCertificate_t *)PEM_read_X509(pf, NULL, NULL, NULL);
+    fclose(pf);
+    return cert;
 }
 
 ESTCertificate_t * pem2crt(const char *pem) {
+    if (pem == NULL)
+    {
+        return NULL;
+    }
     BIO *bio = BIO_new(BIO_s_mem());
     BIO_puts(bio, pem);
     return (ESTCertificate_t *)PEM_read_bio_X509(bio, NULL, NULL, NULL);
 }
 
 bool_t crt_equals(ESTCertificate_t *received, ESTCertificate_t *expected) {
+    if (received == NULL || expected == NULL)
+    {
+        return EST_FALSE;
+    }
     int ret = X509_cmp((X509 *)received, (X509 *)expected);
     return ret == 0 ? EST_TRUE : EST_FALSE;
 }
 
 bool_t is_issuer(ESTCertificate_t *issuer, ESTCertificate_t *crt) {
+    if (issuer == NULL || crt == NULL)
+    {
+        return EST_FALSE;
+    }
     X509_STORE *store = X509_STORE_new();
     X509_STORE_add_cert(store, (X509 *)issuer);
 

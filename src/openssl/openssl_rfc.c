@@ -75,6 +75,11 @@ void rfc7030_init() {
     load_legacy_module();
 }
 
+// Free crypto Library modules resources
+void rfc7030_free() {
+    free_legacy_module();
+}
+
 static ESTTLSInterface_t tls = {
     .initialize = tls_init,
     .free = tls_free,
@@ -124,8 +129,9 @@ bool_t rfc7030_request_cachain(RFC7030_Options_t *config,
     est_opts.tlsInterface = &tls;
     est_opts.x509Interface = &x509;
     
-    if(config->label) {
-        strncpy(est_opts.label, config->label, EST_CLIENT_LABEL_LEN);
+    if(config->label) 
+    {
+        snprintf(est_opts.label, EST_CLIENT_LABEL_LEN, "%s", config->label);
     }
     
     if(config->cachain) {
@@ -137,6 +143,7 @@ bool_t rfc7030_request_cachain(RFC7030_Options_t *config,
 
     if(!est_client_cacerts(&est_opts, config->host, config->port, &cacerts_response, err)) {
         oss_free_implicit_ta(&est_opts);
+        est_client_cacerts_free(&cacerts_response);
         return EST_FALSE;
     }
 
@@ -184,8 +191,9 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
         est_opts.strict8951 = EST_TRUE;
     }
     
-    if(config->opts.label) {
-        strncpy(est_opts.label, config->opts.label, EST_CLIENT_LABEL_LEN);
+    if(config->opts.label) 
+    {
+        snprintf(est_opts.label, EST_CLIENT_LABEL_LEN, "%s", config->opts.label);
     }
     
     if(config->opts.cachain) {
@@ -202,7 +210,9 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
             &config->auth, 
             config->csr_ctx, 
             &enroll_output, err)) {
-
+            
+            LOG_DEBUG(("ReEnroll completed with error\n"))
+            est_client_enroll_free(&enroll_output);
             oss_free_implicit_ta(&est_opts);
             return EST_FALSE;
         }
@@ -215,6 +225,7 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
             &enroll_output, err)) {
 
             LOG_DEBUG(("Enroll completed with error\n"))
+            est_client_enroll_free(&enroll_output);
             oss_free_implicit_ta(&est_opts);
             return EST_FALSE;
         }
