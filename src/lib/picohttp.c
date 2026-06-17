@@ -180,6 +180,7 @@ bool_t picohttp_send(ESTHttp_Ctx_t *ctx, ESTHttp_ReqMetadata_t *request_metadata
                 resp_avail_size = resp_avail_size * 2;
                 // Realloc
                 resp = (char *)malloc(resp_avail_size);
+                memset(resp, 0, resp_avail_size);
                 // Copy the buffer to the new location
                 memcpy(resp, tmp, resp_current_len);
                 // Clear the previous allocated memory
@@ -201,7 +202,7 @@ bool_t picohttp_send(ESTHttp_Ctx_t *ctx, ESTHttp_ReqMetadata_t *request_metadata
             return EST_FALSE;
         }
 
-        LOG_DEBUG(("Recv response: %s\n", resp))
+        LOG_DEBUG(("Recv response: %.*s\n", (int)resp_current_len, resp))
         if(!parse_response(resp, resp_current_len, pico_ctx, response_metadata, err)) {
             free(resp);
             return EST_FALSE;
