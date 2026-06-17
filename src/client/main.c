@@ -352,10 +352,10 @@ int main(int argc, char *argv[]) {
             }
         }
         
-        LOG_INFO(("CACerts:\n"));
-        LOG_INFO(("%s\n", cacerts_pem));
-        LOG_INFO(("Enrolled certificate:\n"));
-        LOG_INFO(("%s\n", enrolled));
+        LOG_DEBUG(("CACerts:\n"));
+        LOG_DEBUG(("%s\n", cacerts_pem));
+        LOG_DEBUG(("Enrolled certificate:\n"));
+        LOG_DEBUG(("%s\n", enrolled));
 
         if(output_ca) {
             if(!write_file(output_ca, "wt", cacerts_pem)) {
@@ -378,8 +378,8 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
         
-        LOG_INFO(("CACerts:\n"));
-        LOG_INFO(("%s\n", cacerts_pem));
+        LOG_DEBUG(("CACerts:\n"));
+        LOG_DEBUG(("%s\n", cacerts_pem));
 
         if(output_ca) {
             if(!write_file(output_ca, "wt", cacerts_pem)) {
