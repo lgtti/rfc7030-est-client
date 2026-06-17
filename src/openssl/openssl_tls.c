@@ -83,7 +83,7 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
 
     if(skip_verify) {
         LOG_ERROR(("TLS verification DISABLED (--insecure). Not safe for production.\n"))
-        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+        return EST_FALSE;
     } else {
         LOG_DEBUG(("Verify trust chain integrity\n"))
         LOG_DEBUG(("configure verify options with chain_len %d\n", (int)chain_len))
