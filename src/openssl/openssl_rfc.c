@@ -51,7 +51,13 @@ bool_t parse_p12(const char *p12, size_t p12_len, const char *password, ESTAuthD
 }
 
 bool_t parse_basicauth(const char *userpassword, ESTAuthData_t *auth, ESTError_t *err) {
-    if(!EVP_EncodeBlock((unsigned char *)auth->basicAuth.b64secret, (const unsigned char *)userpassword, 16)) {
+    if (userpassword == NULL) {
+        LOG_ERROR(("User password is NULL\n"))
+        return EST_FALSE;
+    }
+
+    size_t userpassword_len = strlen(userpassword);
+    if(!EVP_EncodeBlock((unsigned char *)auth->basicAuth.b64secret, (const unsigned char *)userpassword, userpassword_len)) {
         est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_B64, ERR_get_error(), "Failed to convert basic auth to base64 format");
         oss_print_error();
         return EST_FALSE;
