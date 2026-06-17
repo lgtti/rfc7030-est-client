@@ -1,12 +1,27 @@
 #include "internal.h"
 
 ESTPKCS7_t * x509_pkcs7_parse(byte_t *b64, int b64_bytes_len, ESTError_t *err) {
+    /* Validate input to prevent integer overflow */
+    if (b64 == NULL || b64_bytes_len <= 0 || b64_bytes_len > MAX_PKCS7_SIZE) {
+        if (err) est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_PKCS7_PREPARE, 0, "Invalid PKCS7 input size");
+        return NULL;
+    }
+
     unsigned char *p7der = (unsigned char *)malloc(sizeof(unsigned char) * b64_bytes_len);
+    if (p7der == NULL) {
+        if (err) est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_PKCS7_PREPARE, 0, "Failed to allocate memory for p7der");
+        return NULL;
+    }
 
     LOG_DEBUG(("Parse openssl pkcs7 len %d\n", b64_bytes_len))
 
     /* EVP_DecodeBlock don't work with a PEM formatted divided by \n, so we remove all \n characters*/
     byte_t *b64_singleline = (byte_t *)malloc(b64_bytes_len);
+    if (b64_singleline == NULL) {
+        if (err) est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_PKCS7_PREPARE, 0, "Failed to allocate memory for b64_singleline");
+        free(p7der);
+        return NULL;
+    }
     int singleline_idx = 0;
     for(int i = 0; i < b64_bytes_len; i++) {
         if(b64[i] != '\n' && b64[i] != '\r') {
@@ -29,6 +44,12 @@ ESTPKCS7_t * x509_pkcs7_parse(byte_t *b64, int b64_bytes_len, ESTError_t *err) {
     free(b64_singleline);
 
     BIO *mem = BIO_new(BIO_s_mem());
+    if (mem == NULL) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_PKCS7_PREPARE, ERR_get_error(), "Failed to create BIO for PKCS7");
+        oss_print_error();
+        free(p7der);
+        return NULL;
+    }
 
     int written = BIO_write(mem, p7der, p7der_bytes_len);
     if(written < 0) {
@@ -264,6 +285,162 @@ bool_t x509_certificate_store_add(ESTCertificateStore_t *store, ESTCertificate_t
     if(!X509_STORE_add_cert(oss_store, (X509 *)certificate)) {
         est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_CERT_STORE, ERR_get_error(), "Failed to add openssl cert to store");
         oss_print_error();
+        return EST_FALSE;
+    }
+
+    return EST_TRUE;
+}
+
+/* CSR typedef - wraps OpenSSL X509_REQ structure */
+typedef struct {
+    X509_REQ *req;
+} ESTCSR_impl_t;
+
+ESTCSR_t * x509_csr_parse(byte_t *pem, int pem_bytes_len, ESTError_t *err) {
+    LOG_DEBUG(("Parse CSR, len=%d\n", pem_bytes_len))
+
+    X509_REQ *req = NULL;
+    BIO *bio = NULL;
+
+    if (pem == NULL || pem_bytes_len < 1)
+    {
+        LOG_ERROR(("Invalid input to CSR parse\n"));
+        return NULL;
+    }
+
+    // Try PEM first
+    bio = BIO_new_mem_buf(pem, (int)pem_bytes_len);
+    if (bio == NULL) {
+        LOG_ERROR(("Failed to create BIO for CSR parsing\n"));
+        oss_print_error();
+        return NULL;
+    }
+
+    ERR_clear_error();
+    req = PEM_read_bio_X509_REQ(bio, NULL, NULL, NULL);
+    BIO_free(bio);
+    
+    if (req == NULL) {
+        // Clear errors before trying DER
+        ERR_clear_error();
+        
+        // Try DER
+        const unsigned char *p = (const unsigned char *)pem;
+        req = d2i_X509_REQ(NULL, &p, pem_bytes_len);
+    
+        if (req == NULL) {
+            LOG_ERROR(("Failed to parse CSR\n"));
+            oss_print_error();
+            return NULL;
+        }    
+    }
+
+    ESTCSR_impl_t *csr = (ESTCSR_impl_t *)malloc(sizeof(ESTCSR_impl_t));
+    if(csr == NULL) {
+        LOG_ERROR(("Failed to allocate memory for CSR\n"));
+        X509_REQ_free(req);
+        return NULL;
+    }
+    csr->req = req;
+
+    LOG_DEBUG(("CSR parsed successfully\n"))
+    return (ESTCSR_t *)csr;
+}
+
+bool_t x509_csr_free(ESTCSR_t *csr) {
+    if (csr == NULL) {
+        return EST_FALSE;
+    }
+    ESTCSR_impl_t *impl = (ESTCSR_impl_t *)csr;
+    if(impl->req) {
+        X509_REQ_free(impl->req);
+    }
+    free(impl);
+    return EST_TRUE;
+}
+
+bool_t x509_verify_cert_csr_pubkey(ESTCertificate_t *certificate, ESTCSR_t *csr, ESTError_t *err) {
+
+    if (err == NULL || certificate == NULL || csr == NULL) {
+        LOG_ERROR(("Error parameter is NULL\n"));
+        return EST_FALSE;
+    }
+
+    X509 *cert = (X509 *)certificate;
+    ESTCSR_impl_t *csr_impl = (ESTCSR_impl_t *)csr;
+
+    LOG_DEBUG(("Comparing certificate and CSR public keys\n"))
+
+    /* Extract public key from certificate */
+    EVP_PKEY *cert_pkey = X509_get_pubkey(cert);
+    if(!cert_pkey) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_PUBKEY_MISMATCH, ERR_get_error(), 
+            "Failed to extract public key from certificate");
+        oss_print_error();
+        return EST_FALSE;
+    }
+
+    /* Extract public key from CSR */
+    EVP_PKEY *csr_pkey = X509_REQ_get_pubkey(csr_impl->req);
+    if(!csr_pkey) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_PUBKEY_MISMATCH, ERR_get_error(), 
+            "Failed to extract public key from CSR");
+        oss_print_error();
+        EVP_PKEY_free(cert_pkey);
+        return EST_FALSE;
+    }
+
+    /* Compare the public keys */
+    int cmp_result = EVP_PKEY_cmp(cert_pkey, csr_pkey);
+    EVP_PKEY_free(cert_pkey);
+    EVP_PKEY_free(csr_pkey);
+
+    if(cmp_result == 1) {
+        LOG_DEBUG(("Public keys match\n"))
+    } else {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_PUBKEY_MISMATCH, ERR_get_error(), 
+            "Failed to compare public keys between certificate and CSR");
+        oss_print_error();
+        return EST_FALSE;
+    }
+
+    return EST_TRUE;
+}
+
+bool_t x509_verify_cert_csr_subject(ESTCertificate_t *certificate, ESTCSR_t *csr, ESTError_t *err) {
+    if (err == NULL || certificate == NULL || csr == NULL) {
+        LOG_ERROR(("Error parameter is NULL\n"));
+        return EST_FALSE;
+    }
+
+    X509 *cert = (X509 *)certificate;
+    ESTCSR_impl_t *csr_impl = (ESTCSR_impl_t *)csr;
+
+    LOG_DEBUG(("Comparing certificate and CSR subjects\n"))
+
+    /* Get subject from certificate */
+    X509_NAME *cert_subject = X509_get_subject_name(cert);
+    if(!cert_subject) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_SUBJECT_MISMATCH, 0, 
+            "Failed to extract subject from certificate");
+        return EST_FALSE;
+    }
+
+    /* Get subject from CSR */
+    X509_NAME *csr_subject = X509_REQ_get_subject_name(csr_impl->req);
+    if(!csr_subject) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_SUBJECT_MISMATCH, 0, 
+            "Failed to extract subject from CSR");
+        return EST_FALSE;
+    }
+
+    /* Compare subjects */
+    int cmp_result = X509_NAME_cmp(cert_subject, csr_subject);
+    if(cmp_result == 0) {
+        LOG_DEBUG(("Certificate and CSR subjects match\n"))
+    } else {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_SUBJECT_MISMATCH, 0, 
+            "Certificate and CSR subjects do not match");
         return EST_FALSE;
     }
 

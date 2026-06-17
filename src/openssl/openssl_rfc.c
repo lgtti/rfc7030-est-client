@@ -92,7 +92,11 @@ static ESTX509Interface_t x509 = {
     .certificate_verify = x509_certificate_verify,
     .certificate_store_create = x509_certificate_store_create,
     .certificate_store_free = x509_certificate_store_free,
-    .certificate_store_add = x509_certificate_store_add
+    .certificate_store_add = x509_certificate_store_add,
+    .csr_parse = x509_csr_parse,
+    .csr_free = x509_csr_free,
+    .verify_cert_csr_pubkey = x509_verify_cert_csr_pubkey,
+    .verify_cert_csr_subject = x509_verify_cert_csr_subject
 };
 
 static RFC7030_Subsystem_Config_t rfcConfig = {

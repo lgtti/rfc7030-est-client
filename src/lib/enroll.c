@@ -255,6 +255,37 @@ ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len,
         return NULL;
     }
 
+    LOG_DEBUG(("Verifying enrolled certificate matches CSR\n"))
+
+    /* Verify that the certificate's public key matches the CSR public key */
+    ESTCSR_t *csr = x509->csr_parse(req, req_len, err);
+    if(!csr) {
+        est_error_update(err, "Failed to parse CSR for verification");
+        x509->certificate_free(crt);
+        return NULL;
+    }
+
+    if(!x509->verify_cert_csr_pubkey(crt, csr, err)) {
+        est_error_update(err, "Failed to compare certificate and CSR public keys");
+        x509->csr_free(csr);
+        x509->certificate_free(crt);
+        return NULL;
+    }
+
+    LOG_DEBUG(("Public key verification passed\n"))
+
+    /* Verify that the certificate's subject matches the CSR subject */
+    if(!x509->verify_cert_csr_subject(crt, csr, err)) {
+        est_error_update(err, "Failed to compare certificate and CSR subjects");
+        x509->csr_free(csr);
+        x509->certificate_free(crt);
+        return NULL;
+    }
+
+    LOG_DEBUG(("Subject verification passed\n"))
+
+    x509->csr_free(csr);
+
     LOG_DEBUG(("Library enroll completed\n"))
 
     return crt;
