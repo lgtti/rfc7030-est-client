@@ -92,10 +92,23 @@ static bool_t parse_response(char *resp, size_t resp_current_len, PicoHttp_Ctx_t
     memcpy(response_metadata->body, (resp + ret), response_metadata->body_len);
 
     for(int i = 0; i < num_headers; i++) {
-        memcpy(response_metadata->headers[i].name, headers[i].name, headers[i].name_len);
-        response_metadata->headers[i].name[headers[i].name_len] = '\0';
-        memcpy(response_metadata->headers[i].value, headers[i].value, headers[i].value_len);
-        response_metadata->headers[i].value[headers[i].value_len] = '\0';
+        // Bound-check and copy header name
+        size_t nlen = headers[i].name_len;
+        if (nlen > EST_HTTP_HEADER_NAME_LEN - 1) 
+        {
+            nlen = EST_HTTP_HEADER_NAME_LEN - 1;
+        }
+        memcpy(response_metadata->headers[i].name, headers[i].name, nlen);
+        response_metadata->headers[i].name[nlen] = '\0';
+        
+        // Bound-check and copy header value
+        size_t vlen = headers[i].value_len;
+        if (vlen > EST_HTTP_HEADER_VALUE_LEN - 1)
+        {
+            vlen = EST_HTTP_HEADER_VALUE_LEN - 1;
+        }
+        memcpy(response_metadata->headers[i].value, headers[i].value, vlen);
+        response_metadata->headers[i].value[vlen] = '\0';
     }
 
     return EST_TRUE;
@@ -127,7 +140,7 @@ bool_t picohttp_send(ESTHttp_Ctx_t *ctx, ESTHttp_ReqMetadata_t *request_metadata
     for(int i = 0; i < request_metadata->headers_len; i++) {
         strncat(req, request_metadata->headers[i].name, sizeof(req) - strlen(req) - 1);
         strncat(req, ": ", sizeof(req) - strlen(req) - 1);
-        strncat(req, request_metadata->headers[i].value, sizeof(req) - strlen(req) - 1);;
+        strncat(req, request_metadata->headers[i].value, sizeof(req) - strlen(req) - 1);
         strncat(req, "\r\n", sizeof(req) - strlen(req) - 1);
     }
 
@@ -144,7 +157,11 @@ bool_t picohttp_send(ESTHttp_Ctx_t *ctx, ESTHttp_ReqMetadata_t *request_metadata
         strncat(req, content, sizeof(req) - strlen(req) - 1);
         // add trailing last \r\n as requested by http;
         strncat(req, "\r\n", sizeof(req) - strlen(req) - 1);
-        strncat(req, body, sizeof(req) - strlen(req) - 1);
+        size_t available = sizeof(req) - strlen(req);
+        if(body_len < available) {
+            memcpy(req + strlen(req), body, body_len);
+            req[strlen(req) + body_len] = '\0';
+        }
     } else {
         // add trailing last \r\n as requested by http; no body
         strncat(req, "\r\n", sizeof(req) - strlen(req) - 1);
@@ -186,6 +203,7 @@ bool_t picohttp_send(ESTHttp_Ctx_t *ctx, ESTHttp_ReqMetadata_t *request_metadata
                 resp_avail_size = resp_avail_size * 2;
                 // Realloc
                 resp = (char *)malloc(resp_avail_size);
+                memset(resp, 0, resp_avail_size);
                 // Copy the buffer to the new location
                 memcpy(resp, tmp, resp_current_len);
                 // Clear the previous allocated memory
@@ -207,7 +225,7 @@ bool_t picohttp_send(ESTHttp_Ctx_t *ctx, ESTHttp_ReqMetadata_t *request_metadata
             return EST_FALSE;
         }
 
-        LOG_DEBUG(("Recv response: %s\n", resp))
+        LOG_DEBUG(("Recv response: %.*s\n", (int)resp_current_len, resp))
         if(!parse_response(resp, resp_current_len, pico_ctx, response_metadata, err)) {
             free(resp);
             return EST_FALSE;

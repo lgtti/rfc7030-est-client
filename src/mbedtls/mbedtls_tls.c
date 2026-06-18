@@ -23,11 +23,12 @@ bool_t tls_unique(TransportInterface_t  *tint, char *output, size_t *len, ESTErr
 
 int32_t tls_recv( NetworkContext_t * pNetworkContext, void * pBuffer, size_t bytesToRecv )
 {
-    if (pBuffer == NULL || bytesToRecv == 0 || pNetworkContext == NULL) 
+    if (pBuffer == NULL || bytesToRecv == 0 || pNetworkContext == NULL || bytesToRecv > INT32_MAX) 
     {
         LOG_DEBUG(("Invalid input parameters\n"));
         return EST_FALSE;
     }
+
     mbedTLS_NetworkContext_t *octx = (mbedTLS_NetworkContext_t *)pNetworkContext;
     if (octx->ssl->private_state != MBEDTLS_SSL_HANDSHAKE_OVER) 
     {
@@ -37,29 +38,70 @@ int32_t tls_recv( NetworkContext_t * pNetworkContext, void * pBuffer, size_t byt
     int32_t bytesRead = 0;
     int32_t totalBytesRead = 0; 
     char *bufferPtr = (char *)pBuffer;
-    size_t bytesToReadEachIteration = bytesToRecv / 2;
 
     while (totalBytesRead < bytesToRecv) 
     {
-        bytesRead = mbedtls_ssl_read(octx->ssl, ( const unsigned char *)bufferPtr, bytesToReadEachIteration);
+        size_t bytesRemaining = bytesToRecv - totalBytesRead;
+        bytesRead = mbedtls_ssl_read(octx->ssl, ( const unsigned char *)bufferPtr, bytesRemaining);
         
-        if (bytesRead <= 0) 
+        if (bytesRead > 0)
         {
-            if (bytesRead == 0) 
-            {
-                LOG_DEBUG(("Connection closed by peer.\n"));
-            } 
-            else 
-            {
-                char error_buf[100];
-                mbedtls_strerror(bytesRead, error_buf, sizeof(error_buf));
-                LOG_DEBUG(("Return Code during mbedtls_ssl_read: %s\n", error_buf));
-            }
+            totalBytesRead += bytesRead;
+            bufferPtr += bytesRead;
+            continue;
+        }
+
+        if (bytesRead == 0)
+        {
+            LOG_DEBUG(("Connection closed by peer.\n"));
             break;
         }
-        
-        totalBytesRead += bytesRead;
-        bufferPtr += bytesRead;
+
+        // --- Negative return codes ---
+        if (bytesRead == MBEDTLS_ERR_SSL_NON_FATAL)
+        {
+            // Non-fatal alert, safe to retry
+            LOG_DEBUG(("SSL non-fatal alert received, retrying...\n"));
+            continue;
+        }
+
+        if (bytesRead == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET)
+        {
+            // TLS 1.3 — session ticket received, not actual data, retry
+            LOG_DEBUG(("New session ticket received, retrying...\n"));
+            continue;
+        }
+
+        if (bytesRead == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY)
+        {
+            // Clean TLS shutdown from peer
+            LOG_DEBUG(("Peer sent close_notify, closing connection.\n"));
+            mbedtls_ssl_close_notify(octx->ssl);
+            break;
+        }
+
+        if (bytesRead == MBEDTLS_ERR_SSL_CONN_EOF)
+        {
+            // Abrupt TCP disconnection
+            LOG_DEBUG(("Connection EOF — peer dropped connection.\n"));
+            break;
+        }
+
+        if (bytesRead == MBEDTLS_ERR_NET_CONN_RESET)
+        {
+            // TCP RST received
+            LOG_DEBUG(("Connection reset by peer.\n"));
+            break;
+        }
+
+        // --- Fatal / unexpected errors ---
+        {
+            char error_buf[100];
+            mbedtls_strerror(bytesRead, error_buf, sizeof(error_buf));
+            LOG_DEBUG(("Fatal error during mbedtls_ssl_read: %s (code: %d)\n",
+                    error_buf, bytesRead));
+            break;
+        }
     }
     return totalBytesRead;
 }
@@ -135,8 +177,8 @@ bool_t tls_init(const char *host_port, const char *host, const ESTAuthData_t *au
     // check if we need to skip verify
     if (skip_verify) 
     {
-        LOG_DEBUG(("Skip verify trust chain integrity\n"))
-        mbedtls_ssl_conf_authmode(mbed_ssl_config_, MBEDTLS_SSL_VERIFY_NONE);
+        LOG_ERROR(("TLS verification DISABLED (--insecure). Not safe for production.\n"))
+        return EST_FALSE;
     }
     else
     {

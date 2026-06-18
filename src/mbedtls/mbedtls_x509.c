@@ -211,6 +211,181 @@ bool_t x509_certificate_is_self_signed(ESTCertificate_t *certificate, bool_t *re
     return EST_TRUE;
 }
 
+/* CSR typedef - wraps mbedTLS mbedtls_x509_csr structure */
+typedef struct {
+    mbedtls_x509_csr *csr;
+} ESTCSR_mbedtls_impl_t;
+
+/* Forward declarations for helper functions */
+int x509_name_cmp( const mbedtls_x509_name *a, const mbedtls_x509_name *b );
+int x509_string_cmp( const mbedtls_x509_buf *a, const mbedtls_x509_buf *b );
+int x509_memcasecmp( const void *s1, const void *s2, size_t len );
+
+ESTCSR_t * x509_csr_parse(byte_t *pem, int pem_bytes_len, ESTError_t *err) {
+    LOG_DEBUG(("Parse CSR, len=%d\n", pem_bytes_len))
+
+    mbedtls_x509_csr *csr = NULL;
+    unsigned char *csr_buf = NULL;
+    int buf_len = pem_bytes_len;
+    
+    if (pem == NULL || pem_bytes_len < 1 || err == NULL) {
+        LOG_ERROR(("Invalid input to CSR parse\n"));
+        return NULL;
+    }
+
+    csr = (mbedtls_x509_csr *)malloc(sizeof(mbedtls_x509_csr));
+    if (csr == NULL) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_CERT_PARSE, 0, "Failed to allocate memory for CSR");
+        oss_print_error();
+        return NULL;
+    }
+
+    mbedtls_x509_csr_init(csr);
+
+    /* Check if input is PEM format (starts with -----BEGIN) */
+    if (pem_bytes_len > 10 && memcmp(pem, "-----BEGIN", 10) == 0) {
+        LOG_DEBUG(("CSR appears to be PEM format, allocating buffer with null terminator\n"))
+        /* For PEM format, mbedtls needs null-terminated string */
+        csr_buf = (unsigned char *)malloc(pem_bytes_len + 1);
+        if (csr_buf == NULL) {
+            est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_CERT_PARSE, 0, "Failed to allocate memory for CSR buffer");
+            oss_print_error();
+            mbedtls_x509_csr_free(csr);
+            free(csr);
+            return NULL;
+        }
+        memcpy(csr_buf, pem, pem_bytes_len);
+        csr_buf[pem_bytes_len] = '\0';
+        buf_len = pem_bytes_len + 1;
+    } else {
+        LOG_DEBUG(("CSR appears to be DER format\n"))
+        csr_buf = (unsigned char *)pem;
+    }
+
+    int ret = mbedtls_x509_csr_parse(csr, csr_buf, buf_len);
+    
+    /* Free temporary buffer if we allocated one */
+    if (csr_buf != (unsigned char *)pem) {
+        free(csr_buf);
+    }
+
+    if (ret != 0) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_CERT_PARSE, ret, "Failed to parse CSR from DER/PEM");
+        oss_print_error(ret);
+        mbedtls_x509_csr_free(csr);
+        free(csr);
+        return NULL;
+    }
+
+    ESTCSR_mbedtls_impl_t *csr_impl = (ESTCSR_mbedtls_impl_t *)malloc(sizeof(ESTCSR_mbedtls_impl_t));
+    if (csr_impl == NULL) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_CERT_PARSE, 0, "Failed to allocate memory for CSR implementation");
+        oss_print_error();
+        mbedtls_x509_csr_free(csr);
+        free(csr);
+        return NULL;
+    }
+    csr_impl->csr = csr;
+
+    LOG_DEBUG(("CSR parsed successfully\n"))
+    return (ESTCSR_t *)csr_impl;
+}
+
+bool_t x509_csr_free(ESTCSR_t *csr) {
+    if (csr == NULL) {
+        return EST_FALSE;
+    }
+    ESTCSR_mbedtls_impl_t *impl = (ESTCSR_mbedtls_impl_t *)csr;
+    if (impl->csr) {
+        mbedtls_x509_csr_free(impl->csr);
+        free(impl->csr);
+    }
+    free(impl);
+    return EST_TRUE;
+}
+
+bool_t x509_verify_cert_csr_pubkey(ESTCertificate_t *certificate, ESTCSR_t *csr, ESTError_t *err) {
+    if (err == NULL || certificate == NULL || csr == NULL) {
+        LOG_ERROR(("Error parameter is NULL\n"));
+        return EST_FALSE;
+    }
+
+    mbedtls_x509_crt *cert = (mbedtls_x509_crt *)certificate;
+    ESTCSR_mbedtls_impl_t *csr_impl = (ESTCSR_mbedtls_impl_t *)csr;
+
+    if (csr_impl->csr == NULL) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_PUBKEY_MISMATCH, 0,
+            "CSR implementation pointer is NULL");
+        return EST_FALSE;
+    }
+
+    LOG_DEBUG(("Comparing certificate and CSR public keys\n"))
+
+    /* Check if key types match */
+    if (mbedtls_pk_get_type(&cert->pk) != mbedtls_pk_get_type(&csr_impl->csr->pk)) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_PUBKEY_MISMATCH, 0, 
+            "Certificate and CSR have different key types");
+        return EST_FALSE;
+    }
+
+    /* Serialize both public keys to DER format and compare */
+    unsigned char cert_pubkey_der[1024] = {0};
+    unsigned char csr_pubkey_der[1024] = {0};
+    
+    int cert_der_len = mbedtls_pk_write_pubkey_der(&cert->pk, cert_pubkey_der, sizeof(cert_pubkey_der));
+    if (cert_der_len < 0) {
+        LOG_ERROR(("mbedTLS pk_write error: -0x%04X\n", -cert_der_len));
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_PUBKEY_MISMATCH, 0, "Failed to serialize certificate public key");
+        return EST_FALSE;
+    }
+
+    int csr_der_len = mbedtls_pk_write_pubkey_der(&csr_impl->csr->pk, csr_pubkey_der, sizeof(csr_pubkey_der));
+    if (csr_der_len < 0) {
+        LOG_ERROR(("mbedTLS pk_write error: -0x%04X\n", -csr_der_len));
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_PUBKEY_MISMATCH, 0, "Failed to serialize CSR public key");
+        return EST_FALSE;
+    }
+
+    /* Compare the DER representations */
+    /* Note: mbedtls_pk_write_pubkey_der writes to END of buffer, so calculate correct offsets */
+    unsigned char *cert_der_start = &cert_pubkey_der[sizeof(cert_pubkey_der) - cert_der_len];
+    unsigned char *csr_der_start = &csr_pubkey_der[sizeof(csr_pubkey_der) - csr_der_len];
+    
+    if (cert_der_len != csr_der_len || memcmp(cert_der_start, csr_der_start, cert_der_len) != 0) 
+    {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_PUBKEY_MISMATCH, 0, 
+            "Failed to compare public keys between certificate and CSR");
+        return EST_FALSE;
+    }
+
+    LOG_DEBUG(("Public keys match\n"))
+    return EST_TRUE;
+}
+
+bool_t x509_verify_cert_csr_subject(ESTCertificate_t *certificate, ESTCSR_t *csr, ESTError_t *err) {
+    if (err == NULL || certificate == NULL || csr == NULL) {
+        LOG_ERROR(("Error parameter is NULL\n"));
+        return EST_FALSE;
+    }
+
+    mbedtls_x509_crt *cert = (mbedtls_x509_crt *)certificate;
+    ESTCSR_mbedtls_impl_t *csr_impl = (ESTCSR_mbedtls_impl_t *)csr;
+
+    LOG_DEBUG(("Comparing certificate and CSR subjects\n"))
+
+    /* Compare certificate subject with CSR subject */
+    int cmp_result = x509_name_cmp(&cert->subject, &csr_impl->csr->subject);
+    
+    if (cmp_result != EST_TRUE) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_SUBJECT_MISMATCH, 0, 
+            "Certificate and CSR subjects do not match");
+        return EST_FALSE;
+    }
+
+    LOG_DEBUG(("Certificate and CSR subjects match\n"))
+    return EST_TRUE;
+}
+
 /*  
  *  This function is derived from Mbed TLS.  
  *  Copyright The Mbed TLS Contributors  

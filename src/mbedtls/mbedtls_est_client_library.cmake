@@ -8,6 +8,7 @@ set(EST_MBEDTLS_SRC
 
 set(EST_MBEDTLS_SRC_TEST
     ${MODULE_ROOT_DIR}/src/mbedtls/mbedtls_test.c
+    ${MODULE_ROOT_DIR}/src/mbedtls/mbedtls_x509.c
 )
 
 set(EST_MBEDTLS_HEADERS

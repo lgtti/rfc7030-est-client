@@ -62,6 +62,11 @@ void oss_print_error() {
 }
 
 void oss_load_implicit_ta(const char *chain_pem, ESTClient_Options_t *opts) {
+    if (chain_pem == NULL || opts == NULL) {
+        LOG_ERROR(("CACHAIN or options structure is NULL\n"))
+        exit(EXIT_FAILURE);
+    }
+
     // Load all certificates in CACHAIN (used to validate EST server https endpoint).
     size_t chain_pem_len = strlen(chain_pem);
 
@@ -80,6 +85,11 @@ void oss_load_implicit_ta(const char *chain_pem, ESTClient_Options_t *opts) {
     do {
         crt = PEM_read_bio_X509(mem, NULL, NULL, NULL);
         if(crt != NULL) {
+            if(opts->chain_len >= chain_mem_len) {
+                LOG_ERROR(("Certificate chain exceeds maximum of %zu certificates. Discarding excess certificates.\n", chain_mem_len))
+                X509_free(crt);
+                break;
+            }
             opts->chain[opts->chain_len++] = (ESTCertificate_t *)crt;
         }
     } while(crt != NULL);
@@ -105,6 +115,11 @@ int oss_crt2pem_noterminator(X509 *crt, char *pem, size_t pem_len) {
     BUF_MEM *bptr;
     BIO_get_mem_ptr(mem, &bptr);
     int length = bptr->length;
+
+    if (length < 0 || (size_t) length >= pem_len) {
+        BIO_free(mem);
+        return -1;
+    }
 
     int num = BIO_read(mem, pem, length);
     BIO_free(mem);

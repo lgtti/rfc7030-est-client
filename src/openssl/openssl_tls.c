@@ -8,6 +8,10 @@ typedef struct OpenSSL_NetworkContext {
 }OpenSSL_NetworkContext_t;
 
 bool_t tls_unique(TransportInterface_t  *tint, char *output, size_t *len, ESTError_t *err) {
+    if (!tint || !tint->pNetworkContext || !output || !len) {
+        return EST_FALSE;
+    }
+    
     OpenSSL_NetworkContext_t *oss_ctx = (OpenSSL_NetworkContext_t *)tint->pNetworkContext;
     snprintf(output, EST_TLS_UNIQUE_LEN, "%s", oss_ctx->tlsunique);
     *len = strnlen(output, EST_TLS_UNIQUE_LEN - 1);
@@ -15,35 +19,50 @@ bool_t tls_unique(TransportInterface_t  *tint, char *output, size_t *len, ESTErr
 }
 
 int32_t tls_recv( NetworkContext_t * pNetworkContext, void * pBuffer, size_t bytesToRecv ) {
+    if (pBuffer == NULL || bytesToRecv == 0 || pNetworkContext == NULL || bytesToRecv > INT32_MAX) 
+    {
+        LOG_DEBUG(("Invalid input parameters\n"));
+        return EST_FALSE;
+    }
     OpenSSL_NetworkContext_t *octx = (OpenSSL_NetworkContext_t *)pNetworkContext;
 
     int32_t rb = 0;
     int32_t total = 0; 
     char *tmp = (char *)pBuffer;
-    size_t to_read = bytesToRecv / 2;
 
     do {
-        rb = BIO_read(octx->conn, tmp, to_read);
+        size_t remaining = bytesToRecv - total;
+        rb = BIO_read(octx->conn, tmp, remaining);
 
         if(rb != -1) {
             tmp = tmp + rb;
             total = total + rb;
 
-            LOG_DEBUG(("Read %d\n", rb))
-            LOG_DEBUG(("Total %d\n", total))   
+            LOG_DEBUG(("Read %d\n", rb));
+            LOG_DEBUG(("Total %d\n", total));
         }
-    }while((rb > 0 || BIO_should_read(octx->conn)) && (total + to_read) < bytesToRecv );
+    }while((rb > 0 || BIO_should_read(octx->conn)) && total < bytesToRecv );
 
     return total;
 }
 
 int32_t tls_send( NetworkContext_t * pNetworkContext, const void * pBuffer, size_t bytesToSend ) {
+    if (pBuffer == NULL || bytesToSend == 0 || pNetworkContext == NULL || bytesToSend > INT32_MAX) 
+    {
+        LOG_DEBUG(("Invalid input parameters\n"));
+        return EST_FALSE;
+    }
     OpenSSL_NetworkContext_t *octx = (OpenSSL_NetworkContext_t *)pNetworkContext;
     return BIO_write(octx->conn, pBuffer, bytesToSend);
 }
 
 bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *auth, ESTCertificate_t **chain, size_t chain_len, bool_t skip_verify, TransportInterface_t *tint, ESTError_t *err) {
-    LOG_INFO(("init tls channel with openssl\n"))
+    if (!host || !tls_host || !auth || !chain || chain_len == 0 || !tint || !err) {
+        LOG_DEBUG(("Invalid input parameters\n"));
+        return EST_FALSE;
+    }
+
+    LOG_INFO(("init tls channel with openssl\n"));
 
     const SSL_METHOD *method = TLS_client_method(); /* Create new client-method instance */
     SSL_CTX *ctx = SSL_CTX_new(method);
@@ -58,7 +77,9 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
     TLS 1.1 [RFC4346] (or a later version) MUST be
     used for all EST communications
     */
-    SSL_CTX_set_min_proto_version(ctx, TLS1_1_VERSION);
+
+    /* [RFC7525] states TLS 1.1 or earlier should not be use, set min to tls1.2 */
+    SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
 
     /*+ Configure the Trusted chain registry 
         used to validate EST Server certificate. 
@@ -80,8 +101,8 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
     }
 
     if(skip_verify) {
-        LOG_DEBUG(("Skip verify trust chain integrity\n"))
-        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+        LOG_ERROR(("TLS verification DISABLED (--insecure). Not safe for production.\n"))
+        return EST_FALSE;
     } else {
         LOG_DEBUG(("Verify trust chain integrity\n"))
         LOG_DEBUG(("configure verify options with chain_len %d\n", (int)chain_len))
@@ -144,7 +165,7 @@ bool_t tls_init(const char *host, const char *tls_host, const ESTAuthData_t *aut
                 BIO_free(b64);
             } else {
                 bio = BIO_push(b64, bio);
-                BIO_write(bio, buf, strlen(buf));
+                BIO_write(bio, buf, buf_len);
                 (void)BIO_flush(bio);
 
                 BUF_MEM *bptr = NULL;

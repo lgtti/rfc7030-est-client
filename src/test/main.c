@@ -18,6 +18,26 @@ typedef struct TestNetworkContext {
     const char **tls_recv;
 }TestNetworkContext_t;
 
+static char *csr_req[] = {
+    "-----BEGIN CERTIFICATE REQUEST-----\n"
+    "MIICijCCAXICAQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUx\n"
+    "ITAfBgNVBAoMGEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDCCASIwDQYJKoZIhvcN\n"
+    "AQEBBQADggEPADCCAQoCggEBAMFJ+l6xpoZTP5tESYqiaNSHI45P/YbRKqH/nKtT\n"
+    "IF5+zuyGW93+EwEW6Jy+cNavDDKd3u95HhFYnafIcK0PomNDN3CLd77AUb8XFDF8\n"
+    "6ADweK5aY0KsjJ8hW0gEqfn56VXH0KOkKpA4WMbTx82XQhZaruRkNjcqlVbgFKev\n"
+    "ko6JhKIC2U4eaNFpoNlRbRBcJhnac823D9WngB7O6zjTBp14lzh/YoS+jvwSuFDU\n"
+    "wG5datapa5Ox0gYvvBSx2IX4Os4DIxburWomJz8euMCBTC7EFzuVG9GkrKob9uSD\n"
+    "jClzQ21UutjplDeAkyHDQXkfbyyobz+SWT/EjG9O2G4mA6UCAwEAAaAAMA0GCSqG\n"
+    "SIb3DQEBCwUAA4IBAQC+p1VKXncgCNBhu4igP8Vlr3Y9KuH2xS+IH5EnjLyRKZ4L\n"
+    "PZEupbqaiV2gkHQYFQQs/cggeiN5Ggf93ZtRNnHk5//MTeYQ/nIEGSmeCjEXKMwF\n"
+    "7jVaU2gsvTiKQRK4ey8dOjeX0bB9xm/XM6+NOKRGJ4OwwB1vWQoVs/0E4+dK6Jds\n"
+    "M+oaJdlAUdVEdfdaW6OiAYzy2kZPa91wTiKl8y5FNDTW0EZz1lYWt7j6xixa7dEV\n"
+    "ao+ztqHMlffraSA/wKMRUWj6dP+RtVMwy9uDATvYxy+fLjB6J4/I+GTArH9dHM0z\n"
+    "4HgsUOajpElrcc6noE8oqlD5kKkLDh//kCCn+wDl\n"
+    "-----END CERTIFICATE REQUEST-----\n",
+
+};
+
 static char *cacerts_tls_recv[] = {
     // cacerts response
     "HTTP/1.1 200 OK\n"
@@ -208,17 +228,30 @@ static char *enroll_tls_recv[] = {
     "Status: 200 OK\n"
     "Content-Type: application/pkcs7-mime; smime-type=certs-only\n"
     "Content-Transfer-Encoding: base64\n"
-    "Content-Length: 581\n"
+    "Content-Length: 1410\n"
     "\n"
-    "MIIBqQYJKoZIhvcNAQcCoIIBmjCCAZYCAQExADALBgkqhkiG9w0BBwGgggF+MIIB\n"
-    "ejCCASCgAwIBAgIDB0sJMAoGCCqGSM49BAMCMBcxFTATBgNVBAMTDGVzdEV4YW1w\n"
-    "bGVDQTAeFw0yMzA1MjQwNzMwMjZaFw0yNDA1MjMwNzMwMjZaMBgxFjAUBgNVBAMM\n"
-    "DUVzdENsaWVudFRlc3QwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQS3nPtObhS\n"
-    "mR5zV/kcFuIx8kqf1jcD/dCpMdlPhNsSDg3xGG7uQ8N70b31TR6KgJ8wXNQIfqUX\n"
-    "PVn0ljxJlMX6o1owWDAJBgNVHRMEAjAAMAsGA1UdDwQEAwIHgDAdBgNVHQ4EFgQU\n"
-    "iGJ2WUzetWjpJt1YYtfWQlL8cj4wHwYDVR0jBBgwFoAUGt85hMJW5mzPKrQmpf0M\n"
-    "0kP1PT4wCgYIKoZIzj0EAwIDSAAwRQIgGDzmTOGsj8bI9gdg9lsYhaGZNsUptOXX\n"
-    "Iyr/2/+drqgCIQDDVxeoQyFqMxnvaVwZKR1SzcoXpTofkyYHPBlz0f6xKzEA\n",
+    "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\n",
 
     //end
     ""
@@ -538,7 +571,7 @@ static MunitResult test_enroll_ok(const MunitParameter params[], void* data) {
     ESTCaCerts_Info_t output;
     memset(&output, 0, sizeof(output));
 
-    byte_t *req = "p10req";
+    byte_t *req = (byte_t *)csr_req[0];
     ESTCertificate_t *enrolled = est_enroll(ctx, req, strlen(req), EST_FALSE, &err);
     munit_assert_not_null(enrolled);
 
@@ -565,7 +598,7 @@ static MunitResult test_enroll_retry_after_header(const MunitParameter params[],
     ESTCaCerts_Info_t output;
     memset(&output, 0, sizeof(output));
 
-    byte_t *req = "p10req";
+    byte_t *req = (byte_t *)csr_req[0];
     ESTCertificate_t *enrolled = est_enroll(ctx, req, strlen(req), EST_FALSE, &err);
     munit_assert_null(enrolled);
     munit_assert_true(err.code == EST_ERROR_ENROLL_RETRY);
@@ -591,7 +624,7 @@ static MunitResult test_enroll_missing_header(const MunitParameter params[], voi
     ESTCaCerts_Info_t output;
     memset(&output, 0, sizeof(output));
 
-    byte_t *req = "p10req";
+    byte_t *req = (byte_t *)csr_req[0];
     ESTCertificate_t *enrolled = est_enroll(ctx, req, strlen(req), EST_FALSE, &err);
     munit_assert_null(enrolled);
     munit_assert_true(err.code == EST_HTTP_ERROR_BAD_HEADERS);
@@ -617,7 +650,7 @@ static MunitResult test_enroll_invalid_smime(const MunitParameter params[], void
     ESTCaCerts_Info_t output;
     memset(&output, 0, sizeof(output));
 
-    byte_t *req = "p10req";
+    byte_t *req = (byte_t *)csr_req[0];
     ESTCertificate_t *enrolled = est_enroll(ctx, req, strlen(req), EST_FALSE, &err);
     munit_assert_null(enrolled);
     munit_assert_true(err.code == EST_HTTP_ERROR_BAD_HEADERS);

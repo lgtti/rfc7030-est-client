@@ -94,37 +94,9 @@ ESTCertificate_t * pem2crt(const char *pem) {
 }
 
 
-bool_t is_issuer(mbedtls_x509_crt *issuer, mbedtls_x509_crt *crt) {  
-    if (issuer == NULL || crt == NULL) {  
-        return EST_FALSE;  
-    }  
-
-    // Create a new certificate verification context  
-    mbedtls_x509_crt *cert = mbedtls_calloc(1, sizeof(mbedtls_x509_crt));  
-    if (cert == NULL) {  
-        return EST_FALSE;  
-    }  
-    mbedtls_x509_crt_init(cert);  
-
-    // Parse the issuer certificate  
-    if (mbedtls_x509_crt_parse(cert, issuer->raw.p, issuer->raw.len) != 0) {  
-        mbedtls_x509_crt_free(cert);  
-        return EST_FALSE;  
-    }  
-
-    // Verify the certificate  
-    int ret = mbedtls_x509_crt_verify(crt, cert, NULL, NULL, NULL, NULL, NULL);  
-    if (ret != 0) {  
-        char error_buf[100] = {0};  
-        mbedtls_strerror(ret, error_buf, sizeof(error_buf));  
-        printf("Verification failed: %s\n", error_buf);  
-        mbedtls_x509_crt_free(cert);  
-        return EST_FALSE;  
-    }  
-
-    // Free resources  
-    mbedtls_x509_crt_free(cert);  
-    return EST_TRUE;  
+bool_t is_issuer(mbedtls_x509_crt *issuer, mbedtls_x509_crt *crt) {
+    LOG_INFO(("This function not support at the moment\n"))
+    return EST_FALSE;
 }
 
 bool_t pop_create_csr(void *ctx, const char *tlsunique, size_t tlsunique_len, byte_t *csr, size_t *csr_len, ESTError_t *err) {

@@ -3,10 +3,23 @@
 #define CSR_MAX_LEN 4096
 
 static bool_t load_csr(void *ctx, const char *tlsunique, size_t tlsunique_len, byte_t *csr, size_t *csr_len, ESTError_t *err) {
+    if (ctx == NULL || csr == NULL || csr_len == NULL) {
+        LOG_ERROR(("Invalid parameters: ctx, csr, or csr_len is NULL\n"))
+        return EST_FALSE;
+    }
+    
     char *csr_ctx = (char *)ctx;
-    snprintf(csr, CSR_MAX_LEN, "%s", csr_ctx);
-    *csr_len = strlen(csr_ctx);
-
+    // Use strnlen to safely bound length check, avoiding unterminated string scan
+    size_t csr_ctx_len = strnlen(csr_ctx, EST_CSR_MAX_LEN);
+    
+    if (csr_ctx_len >= EST_CSR_MAX_LEN) {
+        LOG_ERROR(("CSR length exceeds maximum allowed size or not null-terminated\n"))
+        return EST_FALSE;
+    }
+    
+    memcpy(csr, csr_ctx, csr_ctx_len);
+    csr[csr_ctx_len] = '\0';
+    *csr_len = csr_ctx_len;
     return EST_TRUE;
 }
 
@@ -40,7 +53,13 @@ bool_t parse_p12(const char *p12, size_t p12_len, const char *password, ESTAuthD
 }
 
 bool_t parse_basicauth(const char *userpassword, ESTAuthData_t *auth, ESTError_t *err) {
-    if(!EVP_EncodeBlock((unsigned char *)auth->basicAuth.b64secret, (const unsigned char *)userpassword, 16)) {
+    if (userpassword == NULL) {
+        LOG_ERROR(("User password is NULL\n"))
+        return EST_FALSE;
+    }
+
+    size_t userpassword_len = strlen(userpassword);
+    if(!EVP_EncodeBlock((unsigned char *)auth->basicAuth.b64secret, (const unsigned char *)userpassword, userpassword_len)) {
         est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_B64, ERR_get_error(), "Failed to convert basic auth to base64 format");
         oss_print_error();
         return EST_FALSE;
@@ -80,7 +99,11 @@ static ESTX509Interface_t x509 = {
     .certificate_verify = x509_certificate_verify,
     .certificate_store_create = x509_certificate_store_create,
     .certificate_store_free = x509_certificate_store_free,
-    .certificate_store_add = x509_certificate_store_add
+    .certificate_store_add = x509_certificate_store_add,
+    .csr_parse = x509_csr_parse,
+    .csr_free = x509_csr_free,
+    .verify_cert_csr_pubkey = x509_verify_cert_csr_pubkey,
+    .verify_cert_csr_subject = x509_verify_cert_csr_subject
 };
 
 static RFC7030_Subsystem_Config_t rfcConfig = {
@@ -110,13 +133,11 @@ bool_t rfc7030_request_cachain(RFC7030_Options_t *config,
     
     if(config->label) 
     {
-        snprintf(est_opts.label, sizeof(est_opts.label), "%s", config->label);
+        snprintf(est_opts.label, EST_CLIENT_LABEL_LEN, "%s", config->label);
     }
     
     if(config->cachain) {
         oss_load_implicit_ta(config->cachain, &est_opts);
-    } else {
-        est_opts.skip_tls_verify = EST_TRUE;
     }
 
     ESTClientCacerts_Ctx_t cacerts_response;
@@ -134,7 +155,12 @@ bool_t rfc7030_request_cachain(RFC7030_Options_t *config,
     ca[0] = '\0';
     for(int i = 0; i < cacerts_response.cacerts.chain_len; i++) {
         char buf[5000];
-        ca_idx_pt = oss_crt2pem_noterminator((X509 *)cacerts_response.cacerts.chain[i], buf, ca_len); 
+        ca_idx_pt = oss_crt2pem_noterminator((X509 *)cacerts_response.cacerts.chain[i], buf, sizeof(buf));
+        if (ca_idx_pt < 0 || strlen(ca) + (size_t) ca_idx_pt >= ca_len) {
+            est_client_cacerts_free(&cacerts_response);
+            free_legacy_module();
+            return EST_FALSE;
+        }        
         buf[ca_idx_pt] = '\0';
         strncat(ca, buf, ca_len - strlen(ca) - 1);
     }
@@ -169,13 +195,11 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
     
     if(config->opts.label) 
     {
-        snprintf(est_opts.label, sizeof(est_opts.label), "%s", config->opts.label);
+        snprintf(est_opts.label, EST_CLIENT_LABEL_LEN, "%s", config->opts.label);
     }
     
     if(config->opts.cachain) {
         oss_load_implicit_ta(config->opts.cachain, &est_opts);
-    } else {
-        est_opts.skip_tls_verify = EST_TRUE;
     }
 
     ESTClientEnroll_Ctx_t enroll_output;
@@ -213,15 +237,21 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
 
     oss_free_implicit_ta(&est_opts);
     int len = oss_crt2pem_noterminator((X509 *)enroll_output.enrolled, enrolled, enrolled_len);
+    if (len < 0) 
+    { 
+        est_client_enroll_free(&enroll_output); return EST_FALSE; 
+    }
     enrolled[len] = '\0';
 
     int ca_idx_pt = 0;
     ca[0] = '\0';
     for(int i = 0; i < enroll_output.cacerts.chain_len; i++) {
-        char buf[5000];
-        ca_idx_pt = oss_crt2pem_noterminator((X509 *)enroll_output.cacerts.chain[i], buf, ca_len); 
-        buf[ca_idx_pt] = '\0';
-        strncat(ca, buf, ca_len - strlen(ca) - 1);
+        int n = oss_crt2pem_noterminator((X509 *)enroll_output.cacerts.chain[i], ca + ca_idx_pt, ca_len - ca_idx_pt);
+        if (n < 0) 
+        { 
+            est_client_enroll_free(&enroll_output); return EST_FALSE; 
+        }
+        ca_idx_pt += n;
     }
 
     est_client_enroll_free(&enroll_output);

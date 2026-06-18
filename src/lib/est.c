@@ -84,7 +84,7 @@ bool_t est_connect(ESTClient_Ctx_t *ctx, const char *host, int port, const ESTAu
 
     /* Save host (without port) to the context, 
     we must reuse it in the Host HTTP Header. */
-    snprintf(ctx->host, sizeof(ctx->host), "%s", host);
+    snprintf(ctx->host, EST_HTTP_HOST_LEN, "%s", host);
 
     if(!ctx->options.tlsInterface->initialize(host_port, host, auth, ctx->options.chain, ctx->options.chain_len, 
         ctx->options.skip_tls_verify, &ctx->transport, err)) {

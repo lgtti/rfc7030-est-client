@@ -47,6 +47,9 @@
 /* Max number of headers in the http response */
 #define HTTP_MAX_HEADERS_NUM 100
 
+/* Maximum acceptable file size for read_file */
+#define MAX_FILE_SIZE 50000
+
 /* Enable/Disable EST client feature define in the EST specification at 
     4.1.3.  CA Certificates Response
     specifically for the OldWithOld management.

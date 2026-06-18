@@ -71,6 +71,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     snprintf(states[0].header.value, sizeof(states[0].header.value), "%s", HTTP_HEADER_CONTENT_TYPE_VAL);
 
     if(!http_verify_response_compliance(&respMetadata, states, CACERTS_VERIFY_STATE_NUM, err)) {
+        http->send_free(ctx->http, &respMetadata);
         return EST_FALSE;
     }
 
@@ -218,10 +219,6 @@ bool_t est_cacerts(ESTClient_Ctx_t *ctx, ESTCaCerts_Info_t *output, ESTError_t *
     /* PKCS7 must contains some certificates. Here we have received an error during
         the extracting phase of these certifcates.
         err is expected populated by the function in error*/
-    if(p7certificates_len < 0) {
-        est_error_update(err, "Failed to extract pkcs7 certificate list for cacerts");
-        return EST_FALSE;
-    }
 
     /* No certificates found in a valid PKCS7 response. EST /cacerts MUST contains 
         at least the EST TA so this is an error. 

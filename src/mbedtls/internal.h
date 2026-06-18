@@ -12,6 +12,7 @@
 #include <mbedtls/pkcs7.h>
 #include <mbedtls/x509_csr.h>
 #include <mbedtls/x509.h>
+#include <mbedtls/pk.h>
 #include <mbedtls/base64.h>
 #include <mbedtls/pem.h>
 #include <mbedtls/ctr_drbg.h>
@@ -312,6 +313,45 @@ void x509_certificate_store_free(ESTCertificateStore_t **store);
  * @return Boolean value indicating whether the certificate was successfully added to the store.
  */
 bool_t x509_certificate_store_add(ESTCertificateStore_t *store, ESTCertificate_t *certificate, ESTError_t *err);
+
+/**
+ * @brief Parses a PKCS#10 CSR (Certificate Signing Request) from PEM or DER format.
+ *
+ * @param pem Pointer to the PEM or DER-encoded CSR byte array.
+ * @param pem_bytes_len Length of the PEM or DER-encoded CSR byte array.
+ * @param err Pointer to an ESTError_t variable to store any error that occurs during parsing.
+ *
+ * @return A pointer to the parsed ESTCSR_t structure, or NULL if an error occurs.
+ */
+ESTCSR_t * x509_csr_parse(byte_t *pem, int pem_bytes_len, ESTError_t *err);
+
+/**
+ * @brief Frees the memory allocated for a PKCS#10 CSR.
+ *
+ * @param csr The pointer to the ESTCSR_t structure representing the CSR.
+ * @return True if the CSR was successfully freed, false otherwise.
+ */
+bool_t x509_csr_free(ESTCSR_t *csr);
+
+/**
+ * @brief Verifies that the certificate's public key matches the CSR public key.
+ *
+ * @param certificate The X.509 certificate.
+ * @param csr The PKCS#10 CSR.
+ * @param err Pointer to an ESTError_t variable to store any error.
+ * @return True if keys match, false otherwise.
+ */
+bool_t x509_verify_cert_csr_pubkey(ESTCertificate_t *certificate, ESTCSR_t *csr, ESTError_t *err);
+
+/**
+ * @brief Verifies that the certificate's subject matches the CSR subject.
+ *
+ * @param certificate The X.509 certificate.
+ * @param csr The PKCS#10 CSR.
+ * @param err Pointer to an ESTError_t variable to store any error.
+ * @return True if subjects match, false otherwise.
+ */
+bool_t x509_verify_cert_csr_subject(ESTCertificate_t *certificate, ESTCSR_t *csr, ESTError_t *err);
 
 /**
  * @brief Parses a PKCS#7 DER-encoded data structure.

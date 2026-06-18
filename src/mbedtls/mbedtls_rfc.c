@@ -2,26 +2,54 @@
 
 static bool_t load_csr(void *ctx, const char *tlsunique, size_t tlsunique_len, byte_t *csr, size_t *csr_len, ESTError_t *err)
 {
-    if (ctx == NULL || csr == NULL || csr_len == NULL)
-    {
-        LOG_ERROR(("Invalid input parameters\n"))
+    if (ctx == NULL || csr == NULL || csr_len == NULL) {
+        LOG_ERROR(("Invalid parameters: ctx, csr, or csr_len is NULL\n"))
         return EST_FALSE;
     }
+    
     char *csr_ctx = (char *)ctx;
-    *csr_len = strlen(csr_ctx);
-    snprintf(csr, *csr_len + 1, "%s", csr_ctx);
+    // Use strnlen to safely bound length check, avoiding unterminated string scan
+    size_t csr_ctx_len = strnlen(csr_ctx, EST_CSR_MAX_LEN);
+    
+    if (csr_ctx_len >= EST_CSR_MAX_LEN) {
+        LOG_ERROR(("CSR length exceeds maximum allowed size or not null-terminated\n"))
+        return EST_FALSE;
+    }
+    
+    memcpy(csr, csr_ctx, csr_ctx_len);
+    csr[csr_ctx_len] = '\0';
+    *csr_len = csr_ctx_len;
     return EST_TRUE;
 }
 
 bool_t parse_p12(const char *p12, size_t p12_len, const char *password, ESTAuthData_t *auth, ESTError_t *err)
 {
-    LOG_INFO(("parse_p12 - Feature unavailable\n"))
-    return EST_FEATURE_NOT_SUPPORTED;
+    LOG_INFO(("parse_p12 - PKCS12 feature unavailable in MbedTLS\n"))
+    est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, -1,
+                        "PKCS12 parsing is not supported with MbedTLS backend");
+    return EST_FALSE;
 }
 
 bool_t parse_basicauth(const char *userpassword, ESTAuthData_t *auth, ESTError_t *err) {
-    LOG_INFO(("parse_basicAUTH - Feature unavailable\n"))
-    return EST_FEATURE_NOT_SUPPORTED;
+    if (userpassword == NULL) {
+        LOG_ERROR(("User password is NULL\n"))
+        return EST_FALSE;
+    }
+
+    size_t userpassword_len = strlen(userpassword);
+    size_t olen = 0;
+    
+    if(mbedtls_base64_encode((unsigned char *)auth->basicAuth.b64secret, 
+                             sizeof(auth->basicAuth.b64secret), 
+                             &olen,
+                             (const unsigned char *)userpassword, 
+                             userpassword_len) != 0) {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_B64, 0, "Failed to convert basic auth to base64 format");
+        return EST_FALSE;
+    }
+
+    auth->type = EST_AUTH_TYPE_BASIC;
+    return EST_TRUE;
 }
 
 /**
@@ -92,7 +120,11 @@ static ESTX509Interface_t x509 = {
     .certificate_verify = x509_certificate_verify,
     .certificate_store_create = x509_certificate_store_create,
     .certificate_store_free = x509_certificate_store_free,
-    .certificate_store_add = x509_certificate_store_add
+    .certificate_store_add = x509_certificate_store_add,
+    .csr_parse = x509_csr_parse,
+    .csr_free = x509_csr_free,
+    .verify_cert_csr_pubkey = x509_verify_cert_csr_pubkey,
+    .verify_cert_csr_subject = x509_verify_cert_csr_subject
 };
 
 /**
@@ -162,7 +194,7 @@ bool_t rfc7030_request_cachain(RFC7030_Options_t *config,
 
     if(config->label) 
     {
-        snprintf(est_opts.label, sizeof(est_opts.label), "%s", config->label);
+        snprintf(est_opts.label, EST_CLIENT_LABEL_LEN, "%s", config->label);
     }
     
     if(config->cachain) 
@@ -245,7 +277,7 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
     
     if(config->opts.label) 
     {
-        snprintf(est_opts.label, sizeof(est_opts.label), "%s", config->opts.label);
+        snprintf(est_opts.label, EST_CLIENT_LABEL_LEN, "%s", config->opts.label);
     }
     
     if(config->opts.cachain) 
@@ -296,6 +328,10 @@ static bool_t request_certificate_inner(RFC7030_Enroll_Options_t *config,
 
     oss_free_implicit_ta(&est_opts);
     int len = oss_crt2pem_noterminator((mbedtls_x509_crt *)enroll_output.enrolled, enrolled, enrolled_len);
+    if (len < 0) 
+    { 
+        est_client_enroll_free(&enroll_output); return EST_FALSE; 
+    }
     enrolled[len] = '\0';
 
     int ca_idx_pt = 0;
