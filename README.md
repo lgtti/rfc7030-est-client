@@ -16,8 +16,6 @@ Library and client implementation of EST Enrollment Protocol RFC 7030
    - [3.2. Windows](#32-windows)
 4. [Supported Backends](#4-supported-backends)
    - [4.1. mbedTLS](#41-mbedtls)
-     - [4.1.1 Build mbedTLS](#411-build-mbedtls)
-     - [4.1.2 Build the EST Client](#412-build-the-est-client)
      - [4.1.3 Limitations](#413-limitations)
 5. [Custom TLS/X.509 Backend](#5-custom-tlsx509-backend)
    - [5.1. Function map](#51-function-map)
@@ -128,74 +126,11 @@ Here the table of native supported TLS/X.509 backends.
 | Name | Folder | Version |
 |------|--------|---------|
 | OpenSSL | `src/openssl` | >= 1.x |
-| mbedTLS | `src/mbedtls` | 3.6.x |
+| mbedTLS | `src/mbedtls` | >= 3.6 |
 
 ### 4.1. mbedTLS
 
-Located in the `src/mbedtls` folder, this backend implements the same function map described in [5. Custom TLS/X.509 Backend](#5-custom-tlsx509-backend) using the mbedTLS library.
-
-Unlike the other compile dependencies, mbedTLS is not provided as a git submodule, so you must clone and compile it by yourself. By default the mbedtls folder is searched as sibling of this repository and the static libraries in its `build/library` folder.
-
-```
-.
-├── mbedtls
-│   ├── include
-│   └── build
-│       └── library
-│           ├── libmbedcrypto.a
-│           ├── libmbedtls.a
-│           └── libmbedx509.a
-└── rfc7030-est-client
-```
-
-#### 4.1.1 Build mbedTLS
-
-**Clone the library as sibling of this repository:**
-
-```bash
-cd ..
-git clone --depth 1 --branch mbedtls-3.6 --recurse-submodules --shallow-submodules https://github.com/Mbed-TLS/mbedtls.git
-```
-
-**Setup cmake artifacts:**
-
-```bash
-cmake -Smbedtls -Bmbedtls/build -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTING=OFF -DENABLE_PROGRAMS=OFF
-```
-
-> **Note:** This project links the libraries only, so mbedTLS tests and programs can be disabled to speed up the compilation.
-
-**Compile the code:**
-
-```bash
-cd mbedtls/build
-make
-```
-
-> **Note:** At the end you will find the artifacts `mbedtls/build/library/libmbedtls.a`, `mbedtls/build/library/libmbedx509.a` and `mbedtls/build/library/libmbedcrypto.a`
-
-If you can't use this layout, you can move the library elsewhere using the same flags provided by the OpenSSL backend:
-
-**Set another mbedtls root dir (same `include` and `build/library` structure):**
-
-```bash
-cmake -Ssrc -Bbuild -DUSE_OPENSSL=OFF -DUSE_MBEDTLS=ON \
-    -DUSE_MBEDTLS_CUSTOM_ROOT=ON \
-    -DUSE_MBEDTLS_CUSTOM_ROOT_PATH=/opt/mbedtls
-```
-
-**Set include dir and libraries manually (e.g. a system or cross-compiled mbedtls):**
-
-```bash
-cmake -Ssrc -Bbuild -DUSE_OPENSSL=OFF -DUSE_MBEDTLS=ON \
-    -DUSE_MBEDTLS_MANUAL_LINK=ON \
-    -DUSE_MBEDTLS_MANUAL_LINK_INC=/usr/include \
-    -DUSE_MBEDTLS_MANUAL_LINK_LIB="/usr/lib/libmbedtls.a\;/usr/lib/libmbedx509.a\;/usr/lib/libmbedcrypto.a"
-```
-
-> **Note:** Using the default root dir or `USE_MBEDTLS_CUSTOM_ROOT`, cmake fails with an explicit error if the include dir or one of the three libraries is missing. Using `USE_MBEDTLS_MANUAL_LINK` no check is performed, exactly as for the OpenSSL backend.
-
-The default mbedTLS configuration is enough. This backend requires the modules:
+This backend requires the modules:
 
 | Module | Used for |
 |--------|----------|
@@ -203,36 +138,7 @@ The default mbedTLS configuration is enough. This backend requires the modules:
 | `MBEDTLS_PEM_WRITE_C` | Encode the received certificates in PEM format |
 | `MBEDTLS_X509_CSR_WRITE_C` | Write the CSR used by the unit and integration tests |
 
-> **Note:** All of them are enabled by default in the mbedTLS 3.6 LTS branch, no `mbedtls_config.h` change is required. The backend has been verified with mbedTLS 3.6.7, the 4.x branch has not been tested.
-
-#### 4.1.2 Build the EST Client
-
-**Setup cmake artifacts:**
-
-```bash
-cmake -Ssrc -Bbuild -DUSE_OPENSSL=OFF -DUSE_MBEDTLS=ON
-```
-
-> **Note:** `USE_OPENSSL` MUST be set to OFF. It is ON by default and the OpenSSL section of the `src/CMakeLists.txt` file is evaluated first, so the `USE_MBEDTLS` flag is ignored while OpenSSL is enabled.
-
-**Compile the code:**
-
-```bash
-cd build
-make
-```
-
-> **Note:** At the end you will find the artifact `build/rfc7030-est-client`, exactly as for the OpenSSL backend.
-
-**Run unit tests:**
-
-```bash
-./bin/rfc7030-est-client-tests
-```
-
-All the operations described in [6. Usage](#6-usage) are available with this backend, with the exceptions listed below.
-
-#### 4.1.3 Limitations
+#### 4.1.1 Limitations
 
 | Feature | Status |
 |---------|--------|
@@ -243,12 +149,6 @@ All the operations described in [6. Usage](#6-usage) are available with this bac
 | PKCS7 responses containing CRLs | ❌ NOT IMPLEMENTED |
 
 > **Note:** PKCS12 is not available in mbedTLS, so the `--p12` flag fails with the error `PKCS12 parsing is not supported with MbedTLS backend`. The `parse_pem` entry of the function map isn't implemented too, so the `--input-key`/`--input-cert` flags MUST NOT be used with this backend: the client invokes a null function pointer and crashes.
-
-> **Note:** Certificate authentication is still supported at library level. You can configure the `ESTAuthData_t` structure with `EST_AUTH_TYPE_CERT`, a `mbedtls_x509_crt` certificate and a `mbedtls_pk_context` private key.
-
-> **Note:** The maximum TLS version is pinned to TLS 1.2 in the `src/mbedtls/mbedtls_tls.c` file because mbedTLS 3.6.0 has some issues with TLS 1.3 connections.
-
-> **Note:** The PKCS7 parser located in the `src/mbedtls/mbedtls_pkcs7.c` file is a modified copy of the mbedTLS one, providing support for multiple certificates in the response.
 
 ## 5. Custom TLS/X.509 Backend
 
