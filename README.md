@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Library and client implementation of EST Enrollment Protocol RFC 7030  
-https://www.rfc-editor.org/rfc/rfc7030.html
+<https://www.rfc-editor.org/rfc/rfc7030.html>
 
 ## Table of Contents
 
@@ -15,6 +15,10 @@ https://www.rfc-editor.org/rfc/rfc7030.html
    - [3.1. Linux/MacOS](#31-linuxmacos)
    - [3.2. Windows](#32-windows)
 4. [Supported Backends](#4-supported-backends)
+   - [4.1. mbedTLS](#41-mbedtls)
+     - [4.1.1 Build mbedTLS](#411-build-mbedtls)
+     - [4.1.2 Build the EST Client](#412-build-the-est-client)
+     - [4.1.3 Limitations](#413-limitations)
 5. [Custom TLS/X.509 Backend](#5-custom-tlsx509-backend)
    - [5.1. Function map](#51-function-map)
    - [5.2. Example](#52-example)
@@ -34,7 +38,7 @@ https://www.rfc-editor.org/rfc/rfc7030.html
 
 ## 1. Why another EST Client
 
-Actually, the standard reference implementation https://github.com/cisco/libest is very complex (Android support, BRSKI support, ...).
+Actually, the standard reference implementation <https://github.com/cisco/libest> is very complex (Android support, BRSKI support, ...).
 
 Another problem with libest is the OpenSSL library used to implements all crypto capabilities because is the only supported library and the references are scattered in the code so is't easy to port to another library.
 
@@ -54,7 +58,8 @@ To support different platforms and libraries we need a 'pluggable' and configura
 
 ## 3. Build
 
-### Compile Dependencies:
+### Compile Dependencies
+
 - picohttpparser
 - munit (test only)
 - cargs (cli client only)
@@ -67,36 +72,49 @@ Current cmake build configuration provides some default arguments you can on/off
 |--------|-------------|
 | `BUILD_CLONE_SUBMODULES=ON` | Set to off to avoid clone third parts compile dependencies |
 | `USE_OPENSSL=ON` | Current default TLS/X.509 backend implementation |
+| `USE_MBEDTLS=OFF` | Enable the mbedTLS TLS/X.509 backend. `USE_OPENSSL` is evaluated first, so you must set it to OFF to select mbedTLS |
 | `USE_OPENSSL_CUSTOM_ROOT=OFF` | Enable the variable USE_OPENSSL_CUSTOM_ROOT_PATH |
 | `USE_OPENSSL_CUSTOM_ROOT_PATH=""` | Enabled using USE_OPENSSL_CUSTOM_ROOT=ON, sets the path used to find the openssl root dir |
 | `USE_OPENSSL_MANUAL_LINK=OFF` | Enable manual link to openssl implementation (skip find_package) |
 | `USE_OPENSSL_MANUAL_LINK_INC=""` | If manual link is ON, set the openssl include directory |
 | `USE_OPENSSL_MANUAL_LINK_LIB=""` | If manual link is ON, set the openssl lib path (you need to set at least two libs, libssl and libcrypto). To setup multiple libraries use cmake list format eg. `USE_OPENSSL_MANUAL_LINK_LIB=/path/libssl.so\;/path/libcrypto.so` |
+| `USE_MBEDTLS_CUSTOM_ROOT=OFF` | Enable the variable USE_MBEDTLS_CUSTOM_ROOT_PATH |
+| `USE_MBEDTLS_CUSTOM_ROOT_PATH="../mbedtls"` | Enabled using USE_MBEDTLS_CUSTOM_ROOT=ON, sets the mbedtls root dir. The include dir is `<root>/include` and the libraries are `<root>/build/library` |
+| `USE_MBEDTLS_MANUAL_LINK=OFF` | Enable manual link to mbedtls implementation (skip the default root dir) |
+| `USE_MBEDTLS_MANUAL_LINK_INC=""` | If manual link is ON, set the mbedtls include directory |
+| `USE_MBEDTLS_MANUAL_LINK_LIB=""` | If manual link is ON, set the mbedtls lib path (you need to set three libs, libmbedtls, libmbedx509 and libmbedcrypto). To setup multiple libraries use cmake list format eg. `USE_MBEDTLS_MANUAL_LINK_LIB=/path/libmbedtls.a\;/path/libmbedx509.a\;/path/libmbedcrypto.a` |
 
 ### 3.1. Linux/MacOS
 
 **Setup cmake artifacts:**
+
 ```bash
 cmake -Ssrc -Bbuild
 ```
+
 > If you want to change the build output directory update the -B flag.
 
 **Compile the code:**
+
 ```bash
 cd build
 make
 ```
+
 > **Note:** At the end you will find the artifact `build/rfc7030-est-client`
 
 **Run unit tests:**
+
 ```bash
 ./bin/rfc7030-est-client-tests
 ```
 
 **Run integration tests:**
+
 ```bash
 ./bin/rfc7030-est-integration-tests
 ```
+
 > **Note:** For detailed integration testing setup and Docker-based EST server configuration, see the documentation in the [`test/`](./test/) directory.
 
 ### 3.2. Windows
@@ -110,6 +128,127 @@ Here the table of native supported TLS/X.509 backends.
 | Name | Folder | Version |
 |------|--------|---------|
 | OpenSSL | `src/openssl` | >= 1.x |
+| mbedTLS | `src/mbedtls` | 3.6.x |
+
+### 4.1. mbedTLS
+
+Located in the `src/mbedtls` folder, this backend implements the same function map described in [5. Custom TLS/X.509 Backend](#5-custom-tlsx509-backend) using the mbedTLS library.
+
+Unlike the other compile dependencies, mbedTLS is not provided as a git submodule, so you must clone and compile it by yourself. By default the mbedtls folder is searched as sibling of this repository and the static libraries in its `build/library` folder.
+
+```
+.
+├── mbedtls
+│   ├── include
+│   └── build
+│       └── library
+│           ├── libmbedcrypto.a
+│           ├── libmbedtls.a
+│           └── libmbedx509.a
+└── rfc7030-est-client
+```
+
+#### 4.1.1 Build mbedTLS
+
+**Clone the library as sibling of this repository:**
+
+```bash
+cd ..
+git clone --depth 1 --branch mbedtls-3.6 --recurse-submodules --shallow-submodules https://github.com/Mbed-TLS/mbedtls.git
+```
+
+**Setup cmake artifacts:**
+
+```bash
+cmake -Smbedtls -Bmbedtls/build -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTING=OFF -DENABLE_PROGRAMS=OFF
+```
+
+> **Note:** This project links the libraries only, so mbedTLS tests and programs can be disabled to speed up the compilation.
+
+**Compile the code:**
+
+```bash
+cd mbedtls/build
+make
+```
+
+> **Note:** At the end you will find the artifacts `mbedtls/build/library/libmbedtls.a`, `mbedtls/build/library/libmbedx509.a` and `mbedtls/build/library/libmbedcrypto.a`
+
+If you can't use this layout, you can move the library elsewhere using the same flags provided by the OpenSSL backend:
+
+**Set another mbedtls root dir (same `include` and `build/library` structure):**
+
+```bash
+cmake -Ssrc -Bbuild -DUSE_OPENSSL=OFF -DUSE_MBEDTLS=ON \
+    -DUSE_MBEDTLS_CUSTOM_ROOT=ON \
+    -DUSE_MBEDTLS_CUSTOM_ROOT_PATH=/opt/mbedtls
+```
+
+**Set include dir and libraries manually (e.g. a system or cross-compiled mbedtls):**
+
+```bash
+cmake -Ssrc -Bbuild -DUSE_OPENSSL=OFF -DUSE_MBEDTLS=ON \
+    -DUSE_MBEDTLS_MANUAL_LINK=ON \
+    -DUSE_MBEDTLS_MANUAL_LINK_INC=/usr/include \
+    -DUSE_MBEDTLS_MANUAL_LINK_LIB="/usr/lib/libmbedtls.a\;/usr/lib/libmbedx509.a\;/usr/lib/libmbedcrypto.a"
+```
+
+> **Note:** Using the default root dir or `USE_MBEDTLS_CUSTOM_ROOT`, cmake fails with an explicit error if the include dir or one of the three libraries is missing. Using `USE_MBEDTLS_MANUAL_LINK` no check is performed, exactly as for the OpenSSL backend.
+
+The default mbedTLS configuration is enough. This backend requires the modules:
+
+| Module | Used for |
+|--------|----------|
+| `MBEDTLS_PKCS7_C` | Parse the PKCS7 `/cacerts`, `/simpleenroll` and `/simplereenroll` responses |
+| `MBEDTLS_PEM_WRITE_C` | Encode the received certificates in PEM format |
+| `MBEDTLS_X509_CSR_WRITE_C` | Write the CSR used by the unit and integration tests |
+
+> **Note:** All of them are enabled by default in the mbedTLS 3.6 LTS branch, no `mbedtls_config.h` change is required. The backend has been verified with mbedTLS 3.6.7, the 4.x branch has not been tested.
+
+#### 4.1.2 Build the EST Client
+
+**Setup cmake artifacts:**
+
+```bash
+cmake -Ssrc -Bbuild -DUSE_OPENSSL=OFF -DUSE_MBEDTLS=ON
+```
+
+> **Note:** `USE_OPENSSL` MUST be set to OFF. It is ON by default and the OpenSSL section of the `src/CMakeLists.txt` file is evaluated first, so the `USE_MBEDTLS` flag is ignored while OpenSSL is enabled.
+
+**Compile the code:**
+
+```bash
+cd build
+make
+```
+
+> **Note:** At the end you will find the artifact `build/rfc7030-est-client`, exactly as for the OpenSSL backend.
+
+**Run unit tests:**
+
+```bash
+./bin/rfc7030-est-client-tests
+```
+
+All the operations described in [6. Usage](#6-usage) are available with this backend, with the exceptions listed below.
+
+#### 4.1.3 Limitations
+
+| Feature | Status |
+|---------|--------|
+| `cacerts`, `enroll` and `renew` using http basic auth | ✅ IMPLEMENTED |
+| mTLS auth using a P12 credential file (`--p12`) | ❌ NOT IMPLEMENTED |
+| mTLS auth using PEM key and certificate (`--input-key`, `--input-cert`) | ❌ NOT IMPLEMENTED |
+| TLS 1.3 | ❌ NOT IMPLEMENTED |
+| PKCS7 responses containing CRLs | ❌ NOT IMPLEMENTED |
+
+> **Note:** PKCS12 is not available in mbedTLS, so the `--p12` flag fails with the error `PKCS12 parsing is not supported with MbedTLS backend`. The `parse_pem` entry of the function map isn't implemented too, so the `--input-key`/`--input-cert` flags MUST NOT be used with this backend: the client invokes a null function pointer and crashes.
+
+> **Note:** Certificate authentication is still supported at library level. You can configure the `ESTAuthData_t` structure with `EST_AUTH_TYPE_CERT`, a `mbedtls_x509_crt` certificate and a `mbedtls_pk_context` private key.
+
+> **Note:** The maximum TLS version is pinned to TLS 1.2 in the `src/mbedtls/mbedtls_tls.c` file because mbedTLS 3.6.0 has some issues with TLS 1.3 connections.
+
+> **Note:** The PKCS7 parser located in the `src/mbedtls/mbedtls_pkcs7.c` file is a modified copy of the mbedTLS one, providing support for multiple certificates in the response.
 
 ## 5. Custom TLS/X.509 Backend
 
@@ -119,13 +258,14 @@ The logic of the EST client is written in the `src/lib` folder but, to invoke th
 
 A new backend need to expose and implement ALL function definitions located in the header file `src/lib/include/rfc7030.h`
 
-> **Note:** An example for OpenSSL is located in `src/openssl/openssl_rfc.c`
+> **Note:** An example for OpenSSL is located in `src/openssl/openssl_rfc.c` and an example for mbedTLS is located in `src/mbedtls/mbedtls_rfc.c`
 
 ### 5.1. Function map
 
 The core of the backend plugin is the config function map. Basically, is a set of function pointers used by the EST core library to invoke implementation-specific functions.
 
 Two different maps are required:
+
 - **ESTTLSInterface_t**: used to invoke TLS specific functions, such as init TLS channel and read/write bytes
 - **ESTX509Interface_t**: used to parse, decode and encode specific X.509 objects such as Certificates, Store, PKCS7 formats
 
@@ -136,15 +276,19 @@ These maps MUST be configured by the backend (for example see the `src/openssl/o
 For example, you want to add a myssl library implementation:
 
 **1. Create new folder:**
+
 ```bash
 src/myssl
 ```
 
 **2. Create new file:**
+
 ```bash
 src/myssl/myssl_rfc.c
 ```
+
 > **Note:** This file must implement all functions definitions:
+>
 > - `rfc7030_init`
 > - `rfc7030_get_config`
 > - `rfc7030_request_cachain`
@@ -152,30 +296,37 @@ src/myssl/myssl_rfc.c
 > - `rfc7030_renew_certificate`
 
 **3. Create new cmake file:**
+
 ```bash
 src/myssl/myssl_est_client_library.cmake
 ```
+
 This file must expose all headers and source files required by the backend implementation. An example is `src/openssl/ossl_est_client_library.cmake`.
 
 **4. Add the library to the `src/CMakeLists.txt` file:**
 Please remember to add a new cmake option (disabled by default) to enable/disable the new backend. For this example could be:
+
 ```cmake
 OPTION(USE_MYSSL "Compile using myssl backend" OFF)
 ```
+
 > **Note:** Search in the file for the `### BEGIN OPENSSL SECTION` and replicate the OpenSSL section as example.
 
 **5. Prepare cmake with flags:**
+
 ```bash
 cmake -Ssrc -Bbuild -DUSE_MYSSL=ON -DUSE_OPENSSL=OFF
 ```
 
 **6. Build the code:**
+
 ```bash
 cd build
 make
 ```
 
 **7. Run tests:**
+
 ```bash
 # Unit tests
 ./bin/rfc7030-est-client-tests
@@ -196,14 +347,17 @@ You can compile the project and generate the command line client, you can build 
 Located in the `src/client` directory, this is a command line interface client.
 
 You can run:
+
 ```bash
 ./rfc7030_est_client -h
 ```
+
 to view the list of input parameters.
 
 #### 6.1.1 Example
 
-First of all, from the http://testrfc7030.com website you must download the server chain dstcax3.pem using the command:
+First of all, from the <http://testrfc7030.com> website you must download the server chain dstcax3.pem using the command:
+
 ```bash
 wget http://testrfc7030.com/dstcax3.pem
 ```
@@ -211,6 +365,7 @@ wget http://testrfc7030.com/dstcax3.pem
 With the client you can run three main operations:
 
 **CACerts**
+
 ```bash
 ./rfc7030-est-client -s testrfc7030.com \
     -p 8443 \
@@ -218,6 +373,7 @@ With the client you can run three main operations:
     --output cachain.pem \
     cacerts
 ```
+
 This command request to the EST server the list of CA certificates. No authentication is required here.
 
 **Enroll**
@@ -225,6 +381,7 @@ This command request to the EST server the list of CA certificates. No authentic
 This command request to the EST Server the emission of a certificate providing a local csr (p10) file in PEM format. Here we need authentication:
 
 *Basic Auth:*
+
 ```bash
 ./rfc7030-est-client -s testrfc7030.com \
     -p 8443 \
@@ -237,6 +394,7 @@ This command request to the EST Server the emission of a certificate providing a
 ```
 
 *TLS Auth:*
+
 ```bash
 ./rfc7030-est-client -s testrfc7030.com \
     -p 9443 \
@@ -248,6 +406,8 @@ This command request to the EST Server the emission of a certificate providing a
     --output-crt enrolled.pem \
     enroll
 ```
+
+> **Note:** mTLS authentication requires the OpenSSL backend, see [4.1.3 Limitations](#413-limitations).
 
 **Renew**
 
@@ -264,6 +424,7 @@ This project is not developed with the idea to generate a shared or dynamic libr
 The drawback is that you must clone this repo and add to your build toolchain all required headers and source files.
 
 To use all library functions you need to include only one header file:
+
 ```c
 #include <est.h>
 ```
@@ -275,31 +436,51 @@ and this provides to you the access to all low level functions (prefixed with `e
 #### 6.2.1 With CMake
 
 If you are using cmake, you can add all required file using the provided cmake import file:
+
 ```cmake
 include(${MODULE_ROOT_DIR}/src/lib/est_library.cmake)
 ```
+
 > **Note:** This include provides to you cmake config some variables:
+>
 > - `EST_SRC`
 > - `EST_HEADERS`
 
 In addition, if you want to use an already implemented backend, you must add it in the same way. Here the example for OpenSSL:
+
 ```cmake
 include(${MODULE_ROOT_DIR}/src/openssl/ossl_est_client_library.cmake)
 ```
+
 > **Note:** This include provides to you cmake config some variables:
+>
 > - `EST_OPENSSL_SRC`
 > - `EST_OPENSSL_SRC_TEST`
 > - `EST_OPENSSL_HEADERS`
+
+and here the example for mbedTLS:
+
+```cmake
+include(${MODULE_ROOT_DIR}/src/mbedtls/mbedtls_est_client_library.cmake)
+```
+
+> **Note:** This include provides to you cmake config some variables:
+>
+> - `EST_MBEDTLS_SRC`
+> - `EST_MBEDTLS_SRC_TEST`
+> - `EST_MBEDTLS_HEADERS`
 
 #### 6.2.2 Without CMake
 
 If you don't want to use cmake or you need another compile manager you can directly link all required headers and source files.
 
 **Set the include directory:**
+
 - `src/lib/include`
 - `src/third_party/picohttpparser`
 
 **Set the src files to link:**
+
 - `src/lib/cacerts.c`
 - `src/lib/client.c`
 - `src/lib/enroll.c`
@@ -314,34 +495,40 @@ To link the selected backend you need to do the same.
 ## 7. Tests
 
 **Run unit tests:**
+
 ```bash
 ./bin/rfc7030-est-client-tests
 ```
 
 **Run integration tests:**
+
 ```bash
 ./bin/rfc7030-est-integration-tests
 ```
+
 > **Note:** Integration tests need internet connection to reach the EST public welcome server. For detailed setup with Docker-based EST server and automated testing, see the comprehensive documentation in the [`test/`](./test/) directory.
 
 ## Integration Testing with Docker
 
 For comprehensive integration testing with a local EST server, this project includes a complete Docker-based testing environment in the [`test/`](./test/) directory.
 
-### Features:
+### Features
+
 - **Dockerized Cisco/libest EST Server** with dual-port configuration (TLS 8443, mTLS 9443)
 - **Real certificate issuance** with OpenSSL CA backend
 - **Persistent CA database** using Docker volumes
 - **Automated test runner** script for complete CI/CD integration
 - **Comprehensive documentation** with setup, usage, and troubleshooting guides
 
-### Quick Start:
+### Quick Start
+
 ```bash
 cd test/
 ./run-integration-tests.sh
 ```
 
 This will automatically:
+
 1. Build the EST server Docker image
 2. Start the EST server with proper configuration
 3. Run all integration tests against the local server
@@ -354,6 +541,7 @@ For detailed setup instructions, configuration options, and troubleshooting, see
 Some HW platforms requires a specific logging implementation. This library doesn't provided any default one, instead offers some macros to be implemented using platform-specific code. The default implementation is a no-ops impl.
 
 The `src/lib/include/config.h` header file contains:
+
 ```c
 #ifdef EST_CONFIG_CUSTOM_FILE
 #include EST_CONFIG_CUSTOM_FILE
@@ -361,11 +549,13 @@ The `src/lib/include/config.h` header file contains:
 ```
 
 During CMake build you can define this macro specifying a header file that redefines the logging functions. For example, if you call cmake with:
+
 ```bash
 cmake ... -DEST_CONFIG_CUSTOM_FILE=mylog.h
 ```
 
 the file must contains:
+
 ```c
 #include "logger.h"
 
@@ -387,11 +577,13 @@ where `log_xxx` are platform specific logging functions implemented and linked i
 ## 10. Custom parameters
 
 Same as for logging, you can use the macro:
+
 ```bash
 cmake ... -DEST_CONFIG_CUSTOM_FILE=mylog.h
 ```
 
 you can undefine and redefine all EST runtime parameters, adapting them to you specific HW or environment. For example:
+
 ```c
 #undef HTTP_RESP_CHUNK_LEN
 #define HTTP_RESP_CHUNK_LEN 10000
@@ -446,7 +638,7 @@ The list of RFC requirements.
 
 ### 12.1 RFC 8951
 
-Thanks to https://github.com/61131 a first support for the RFC 8951 https://datatracker.ietf.org/doc/html/rfc8951 has been added.
+Thanks to <https://github.com/61131> a first support for the RFC 8951 <https://datatracker.ietf.org/doc/html/rfc8951> has been added.
 
 | Level | RFC | Status |
 |-------|-----|--------|
