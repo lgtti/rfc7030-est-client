@@ -49,6 +49,15 @@
 /* Error used if the client fails during send to socket . */
 #define EST_ERROR_HTTP_SEND              0x12
 
+/* Error used if the enrolled certificate's public key doesn't match the CSR */
+#define EST_ERROR_ENROLL_PUBKEY_MISMATCH 0x13
+
+/* Error used if the enrolled certificate's subject doesn't match the CSR */
+#define EST_ERROR_ENROLL_SUBJECT_MISMATCH 0x14
+
+/* Error used if CSR parsing failed */
+#define EST_ERROR_ENROLL_CSR_PARSE      0x15
+
 
 /* Max len of http paths for EST */
 #define EST_HTTP_PATH_LEN 32

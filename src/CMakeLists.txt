@@ -106,9 +106,8 @@ include(${MODULE_ROOT_DIR}/src/lib/est_library.cmake)
 
 ### BEGIN OPENSSL SECTION
 
-include(${MODULE_ROOT_DIR}/src/openssl/ossl_est_client_library.cmake)
-
 OPTION(USE_OPENSSL "Compile using openssl backend" ON)
+OPTION(USE_MBEDTLS "Compile using mbedtls backend" ON)
 OPTION(USE_OPENSSL_MANUAL_LINK "Ignore find_package and manually link include and lib" OFF)
 OPTION(USE_OPENSSL_MANUAL_LINK_INC "Set openssl include dir" /usr/include)
 OPTION(USE_OPENSSL_MANUAL_LINK_LIB "Set openssl lib dir" /usr/lib64)
@@ -116,6 +115,7 @@ OPTION(USE_OPENSSL_CUSTOM_ROOT "Custom openssl path" OFF)
 OPTION(USE_OPENSSL_CUSTOM_ROOT_PATH "Custom openssl path" /usr/local/opt/openssl)
 
 if(USE_OPENSSL)
+    include(${MODULE_ROOT_DIR}/src/openssl/ossl_est_client_library.cmake)
     if(USE_OPENSSL_MANUAL_LINK)
         set(OPENSSL_INCLUDE_DIR ${USE_OPENSSL_MANUAL_LINK_INC})
         set(OPENSSL_LIBRARIES ${USE_OPENSSL_MANUAL_LINK_LIB})
@@ -143,6 +143,23 @@ if(USE_OPENSSL)
     set(SSL_LIBRARIES ${OPENSSL_LIBRARIES})
     set(SSL_SRC ${EST_OPENSSL_SRC})
     set(SSL_SRC_TEST ${EST_OPENSSL_SRC_TEST})
+elseif(USE_MBEDTLS)
+    ### BEGIN MBEDTLS SECTION
+    include(${MODULE_ROOT_DIR}/src/mbedtls/mbedtls_est_client_library.cmake)
+
+    ## Manual Link MbedTLS
+    set(MBEDTLS_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../../mbedtls/include)
+    set(MBEDTLS_LIBRARIES ${CMAKE_CURRENT_LIST_DIR}/../../mbedtls/build/library)
+    set(SSL_LIBRARIES 
+        ${MBEDTLS_LIBRARIES}/libmbedtls.a
+        ${MBEDTLS_LIBRARIES}/libmbedx509.a
+        ${MBEDTLS_LIBRARIES}/libmbedcrypto.a)
+
+    set(SSL_INCLUDE_DIR ${MBEDTLS_INCLUDE_DIR} ${EST_MBEDTLS_HEADERS})
+    set(SSL_SRC ${EST_MBEDTLS_SRC})
+    set(SSL_SRC_TEST ${EST_MBEDTLS_SRC_TEST})
+    ### END MBEDTLS SECTION
+
 else()
     message( FATAL_ERROR "No SSL/TLS backend specified. " )
 endif()
@@ -152,8 +169,3 @@ endif()
 add_subdirectory(${MODULE_ROOT_DIR}/src/client)
 add_subdirectory(${MODULE_ROOT_DIR}/src/test)
 add_subdirectory(${MODULE_ROOT_DIR}/src/integration)
-
-
-
-
-

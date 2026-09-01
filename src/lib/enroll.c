@@ -49,6 +49,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     */
     if(!http->send(ctx->http, httpReq, body, body_len, &respMetadata, err)) {
         est_error_update(err, "Failed to send enroll http request");
+        http->send_free(ctx->http, &respMetadata);
         return NULL;
     }
 
@@ -77,12 +78,14 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
                     // Stop execution retuning error with the retry informaton
                     est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_RETRY, retry,
                         "Server requests retry after delay %d", retry);
+                    http->send_free(ctx->http, &respMetadata);
                     return NULL;
                 }
             }
         } else {
             est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_CACERTS_HTTP_KO, 0,
                 "Invalid http status code %d", respMetadata.status);
+            http->send_free(ctx->http, &respMetadata);
             return NULL;
         }
     }
@@ -112,6 +115,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
         strcpy(states[0].alternative, HTTP_HEADER_CONTENT_TYPE_VAL_ENROLL_ALTRFC8951);
 
         if(!http_verify_response_compliance(&respMetadata, states, ENROLL_VERIFY_STATE_NUM_RFC8251, err)) {
+            http->send_free(ctx->http, &respMetadata);
             return EST_FALSE;
         }
     } else { 
@@ -126,6 +130,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
         strcpy(states[1].header.value, HTTP_HEADER_CONTENT_ENC_VAL);
 
         if(!http_verify_response_compliance(&respMetadata, states, ENROLL_VERIFY_STATE_NUM, err)) {
+            http->send_free(ctx->http, &respMetadata);
             return EST_FALSE;
         }
     }
@@ -134,6 +139,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     */
     if(respMetadata.body_len == 0) {
         est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_NOBODY, 0, "No bytes found in HTTP response");
+        http->send_free(ctx->http, &respMetadata);
         return NULL;
     }
 
@@ -144,6 +150,7 @@ static ESTPKCS7_t * make_http_request(ESTClient_Ctx_t *ctx, ESTHttp_ReqMetadata_
     ESTPKCS7_t *p7 = x509->pkcs7_parse(respMetadata.body, respMetadata.body_len, err);
     if(!p7) {
         est_error_update(err, "Failed to parse http request body in pkcs7 form");
+        http->send_free(ctx->http, &respMetadata);
         return NULL;
     }
 
@@ -173,11 +180,11 @@ ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len,
     }
     
     if(renew) {
-        sprintf(path, 
+        snprintf(path, path_max_len,
             use_label ? EST_HTTP_PATH_SIMPLEREENROLL : EST_HTTP_PATH_SIMPLEREENROLL_NOLABEL, 
             ctx->options.label);
     } else {
-        sprintf(path, 
+        snprintf(path, path_max_len,
             use_label ? EST_HTTP_PATH_SIMPLEENROLL : EST_HTTP_PATH_SIMPLEENROLL_NOLABEL, 
             ctx->options.label);
     }
@@ -192,11 +199,11 @@ ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len,
     */
     httpReq.headers_len = 5;
 
-    strcpy(httpReq.headers[0].name, "User-Agent");
-    strcpy(httpReq.headers[0].value, EST_LIB_VERSION);
+    snprintf(httpReq.headers[0].name, sizeof(httpReq.headers[0].name), "%s", "User-Agent");  
+    snprintf(httpReq.headers[0].value, sizeof(httpReq.headers[0].value), "%s", EST_LIB_VERSION);  
 
-    strcpy(httpReq.headers[1].name, "Host");
-    strcpy(httpReq.headers[1].value, ctx->host);
+    snprintf(httpReq.headers[1].name, sizeof(httpReq.headers[1].name), "%s", "Host");  
+    snprintf(httpReq.headers[1].value, sizeof(httpReq.headers[1].value), "%s", ctx->host);
 
     /* set simpleenroll request type
     RFC: 
@@ -204,13 +211,14 @@ ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len,
     format of the message is as specified in [RFC5967] with a Content-
     Transfer-Encoding of "base64" [RFC2045].
     */
-    strcpy(httpReq.headers[2].name, "Content-Type");
-    strcpy(httpReq.headers[2].value, "application/pkcs10");
-    strcpy(httpReq.headers[3].name, "Content-Transfer-Encoding");
-    strcpy(httpReq.headers[3].value, "base64");
+    snprintf(httpReq.headers[2].name, sizeof(httpReq.headers[2].name), "%s", "Content-Type");  
+    snprintf(httpReq.headers[2].value, sizeof(httpReq.headers[2].value), "%s", "application/pkcs10");  
 
-    strcpy(httpReq.headers[4].name, "Accept");
-    strcpy(httpReq.headers[4].value, "*/*");
+    snprintf(httpReq.headers[3].name, sizeof(httpReq.headers[3].name), "%s", "Content-Transfer-Encoding");  
+    snprintf(httpReq.headers[3].value, sizeof(httpReq.headers[3].value), "%s", "base64");  
+
+    snprintf(httpReq.headers[4].name, sizeof(httpReq.headers[4].name), "%s", "Accept");  
+    snprintf(httpReq.headers[4].value, sizeof(httpReq.headers[4].value), "%s", "*/*");
 
 
     ESTPKCS7_t *p7 = make_http_request(ctx, &httpReq, req, req_len, err);
@@ -247,6 +255,37 @@ ESTCertificate_t * est_enroll(ESTClient_Ctx_t *ctx, byte_t *req, size_t req_len,
         est_error_set_custom(err, ERROR_SUBSYSTEM_EST, EST_ERROR_ENROLL_TOOMANY, 0, "Too many certificates found in PKCS7 response for request certificate");
         return NULL;
     }
+
+    LOG_DEBUG(("Verifying enrolled certificate matches CSR\n"))
+
+    /* Verify that the certificate's public key matches the CSR public key */
+    ESTCSR_t *csr = x509->csr_parse(req, req_len, err);
+    if(!csr) {
+        est_error_update(err, "Failed to parse CSR for verification");
+        x509->certificate_free(crt);
+        return NULL;
+    }
+
+    if(!x509->verify_cert_csr_pubkey(crt, csr, err)) {
+        est_error_update(err, "Failed to compare certificate and CSR public keys");
+        x509->csr_free(csr);
+        x509->certificate_free(crt);
+        return NULL;
+    }
+
+    LOG_DEBUG(("Public key verification passed\n"))
+
+    /* Verify that the certificate's subject matches the CSR subject */
+    if(!x509->verify_cert_csr_subject(crt, csr, err)) {
+        est_error_update(err, "Failed to compare certificate and CSR subjects");
+        x509->csr_free(csr);
+        x509->certificate_free(crt);
+        return NULL;
+    }
+
+    LOG_DEBUG(("Subject verification passed\n"))
+
+    x509->csr_free(csr);
 
     LOG_DEBUG(("Library enroll completed\n"))
 

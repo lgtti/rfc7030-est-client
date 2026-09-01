@@ -5,6 +5,11 @@
 #include "error.h"
 #include <stddef.h>
 
+/* Maximum number of certificates allowed in a PKCS7 to prevent DoS */
+#define MAX_PKCS7_CERTIFICATES 64
+
+/* Maximum size of PKCS7 data (10MB) to prevent memory exhaustion attacks */
+#define MAX_PKCS7_SIZE (10 * 1024 * 1024)
 
 /* Incomplete type for X.509 certificate.
  This type must refer to a host-specific X.509 implementation privided
@@ -78,6 +83,30 @@ typedef size_t (*EST_x509_pkcs7_get_certificates_t)(ESTPKCS7_t *p7, ESTCertifica
  */
 typedef ESTCertificate_t * (*EST_x509_pkcs7_get_first_certificate_t)(ESTPKCS7_t *p7, size_t *len, ESTError_t *err);
 
+/* Incomplete type for X.509 PKCS#10 CSR parsing.
+ The caller must implement this function with an input as DER-formatted byte array of the CSR
+ returning the real implementation structure as pointer.*/
+typedef struct ESTCSR ESTCSR_t;
+
+/* Incomplete type for X.509 CSR parsing.
+ The caller must implement this function with an input as DER-formatted byte array of the CSR
+ returning the real implementation structure as pointer.*/
+typedef ESTCSR_t * (*EST_x509_csr_parse_t)(byte_t *pem, int pem_bytes_len, ESTError_t *err);
+
+/* Incomplete type for X.509 CSR free.
+ The caller must implement this function to free the memory allocated using est_x509_parse_csr.*/
+typedef bool_t (*EST_x509_csr_free_t)(ESTCSR_t *csr);
+
+/* Incomplete type for X.509 CSR public key verification against certificate.
+ Compares the public key in the CSR with the public key in the certificate.
+ Returns EST_TRUE if keys match, EST_FALSE otherwise.*/
+typedef bool_t (*EST_x509_verify_cert_csr_pubkey_t)(ESTCertificate_t *certificate, ESTCSR_t *csr, ESTError_t *err);
+
+/* Incomplete type for X.509 CSR and certificate subject verification.
+ Compares the subject in the CSR with the subject in the certificate.
+ Returns EST_TRUE if subjects match, EST_FALSE otherwise.*/
+typedef bool_t (*EST_x509_verify_cert_csr_subject_t)(ESTCertificate_t *certificate, ESTCSR_t *csr, ESTError_t *err);
+
 
 
 typedef struct ESTX509Interface {
@@ -92,7 +121,13 @@ typedef struct ESTX509Interface {
     EST_x509_pkcs7_free_t pkcs7_free;
     EST_x509_pkcs7_get_certificates_t pkcs7_get_certificates;
     EST_x509_pkcs7_get_first_certificate_t pkcs7_get_first_certificate;
+    EST_x509_csr_parse_t csr_parse;
+    EST_x509_csr_free_t csr_free;
+    EST_x509_verify_cert_csr_pubkey_t verify_cert_csr_pubkey;
+    EST_x509_verify_cert_csr_subject_t verify_cert_csr_subject;
 }ESTX509Interface_t;
+
+
 
 
 #endif /* A86EFDC9_43D7_430C_8336_B7E51751CF77 */

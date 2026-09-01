@@ -8,5 +8,6 @@ typedef byte_t bool_t;
 
 #define EST_TRUE 1
 #define EST_FALSE 0
+#define EST_ERROR -1
 
 #endif /* FA2622D0_7DC5_43EF_BADE_626957B8AA05 */
