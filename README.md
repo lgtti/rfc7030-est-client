@@ -16,7 +16,7 @@ Library and client implementation of EST Enrollment Protocol RFC 7030
    - [3.2. Windows](#32-windows)
 4. [Supported Backends](#4-supported-backends)
    - [4.1. mbedTLS](#41-mbedtls)
-     - [4.1.3 Limitations](#413-limitations)
+     - [4.1.1 Limitations](#411-limitations)
 5. [Custom TLS/X.509 Backend](#5-custom-tlsx509-backend)
    - [5.1. Function map](#51-function-map)
    - [5.2. Example](#52-example)
@@ -144,11 +144,13 @@ This backend requires the modules:
 |---------|--------|
 | `cacerts`, `enroll` and `renew` using http basic auth | ✅ IMPLEMENTED |
 | mTLS auth using a P12 credential file (`--p12`) | ❌ NOT IMPLEMENTED |
-| mTLS auth using PEM key and certificate (`--input-key`, `--input-cert`) | ❌ NOT IMPLEMENTED |
+| mTLS auth using PEM key and certificate (`--input-key`, `--input-cert`) | ✅ IMPLEMENTED |
 | TLS 1.3 | ❌ NOT IMPLEMENTED |
 | PKCS7 responses containing CRLs | ❌ NOT IMPLEMENTED |
 
-> **Note:** PKCS12 is not available in mbedTLS, so the `--p12` flag fails with the error `PKCS12 parsing is not supported with MbedTLS backend`. The `parse_pem` entry of the function map isn't implemented too, so the `--input-key`/`--input-cert` flags MUST NOT be used with this backend: the client invokes a null function pointer and crashes.
+> **Note:** PKCS12 is not available in mbedTLS, so the `--p12` flag fails with the error `PKCS12 parsing is not supported with MbedTLS backend`. Use the `--input-key` and `--input-cert` flags to provide the same mTLS credential in PEM format.
+
+> **Note:** The expected server name is set using `mbedtls_ssl_set_hostname`, so the EST server certificate MUST cover the value of the `-s` flag. Connecting using an IP address requires that address in the certificate SubjectAltName.
 
 ## 5. Custom TLS/X.509 Backend
 
@@ -307,7 +309,7 @@ This command request to the EST Server the emission of a certificate providing a
     enroll
 ```
 
-> **Note:** mTLS authentication requires the OpenSSL backend, see [4.1.3 Limitations](#413-limitations).
+> **Note:** The P12 credential requires the OpenSSL backend. With the mbedTLS backend use `--input-key` and `--input-cert` to provide the same credential in PEM format, see [4.1.1 Limitations](#411-limitations).
 
 **Renew**
 

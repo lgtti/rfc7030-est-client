@@ -30,6 +30,145 @@ bool_t parse_p12(const char *p12, size_t p12_len, const char *password, ESTAuthD
     return EST_FALSE;
 }
 
+/**
+ * @brief Copies a PEM buffer adding the null terminator required by MbedTLS.
+ *
+ * MbedTLS detects the PEM format checking that the last byte of the input
+ * buffer is a null terminator, and the terminator must be counted in the
+ * buffer length. The caller can't be forced to respect this convention, so
+ * the buffer is copied and terminated here.
+ *
+ * @param pem The PEM buffer to copy.
+ * @param pem_len The length of the PEM buffer, without the null terminator.
+ * @param out_len The length of the returned buffer, including the null terminator.
+ *
+ * @return The null terminated copy of the input buffer, NULL on allocation failure.
+ *         The caller MUST free it.
+ */
+static unsigned char * pem_terminated_copy(const char *pem, size_t pem_len, size_t *out_len)
+{
+    unsigned char *buf = (unsigned char *)malloc(pem_len + 1);
+    if (buf == NULL)
+    {
+        return NULL;
+    }
+
+    memcpy(buf, pem, pem_len);
+    buf[pem_len] = '\0';
+    *out_len = pem_len + 1;
+
+    return buf;
+}
+
+bool_t parse_pem(const char *key, size_t key_len, const char *cert, size_t cert_len, ESTAuthData_t *auth, ESTError_t *err)
+{
+    if (key == NULL || key_len == 0 || cert == NULL || cert_len == 0 || auth == NULL || err == NULL)
+    {
+        LOG_ERROR(("Invalid parameters: key, cert, auth or err is NULL\n"))
+        return EST_FALSE;
+    }
+
+    LOG_INFO(("Prepare enroll with PEM key len=%d cert len=%d\n", (int)key_len, (int)cert_len))
+
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+
+    /* MbedTLS requires a random number generator to parse the private key. */
+    const char *pers = "parse_pem";
+    int ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers));
+    if (ret != 0)
+    {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, ret, "Failed to seed random number generator");
+        oss_print_error(ret);
+        mbedtls_ctr_drbg_free(&ctr_drbg);
+        mbedtls_entropy_free(&entropy);
+        return EST_FALSE;
+    }
+
+    mbedtls_pk_context *pkey = (mbedtls_pk_context *)malloc(sizeof(mbedtls_pk_context));
+    mbedtls_x509_crt *crt = (mbedtls_x509_crt *)malloc(sizeof(mbedtls_x509_crt));
+    if (pkey == NULL || crt == NULL)
+    {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, 0, "Failed to allocate PEM key or certificate");
+        free(pkey);
+        free(crt);
+        mbedtls_ctr_drbg_free(&ctr_drbg);
+        mbedtls_entropy_free(&entropy);
+        return EST_FALSE;
+    }
+
+    mbedtls_pk_init(pkey);
+    mbedtls_x509_crt_init(crt);
+
+    /* Load private key from PEM */
+    size_t buf_len = 0;
+    unsigned char *buf = pem_terminated_copy(key, key_len, &buf_len);
+    if (buf == NULL)
+    {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, 0, "Failed to allocate PEM private key buffer");
+        goto error;
+    }
+
+    ret = mbedtls_pk_parse_key(pkey, buf, buf_len, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
+    free(buf);
+
+    if (ret != 0)
+    {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, ret, "Failed to parse PEM private key");
+        oss_print_error(ret);
+        goto error;
+    }
+
+    /* Load certificate from PEM */
+    buf = pem_terminated_copy(cert, cert_len, &buf_len);
+    if (buf == NULL)
+    {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, 0, "Failed to allocate PEM certificate buffer");
+        goto error;
+    }
+
+    ret = mbedtls_x509_crt_parse(crt, buf, buf_len);
+    free(buf);
+
+    if (ret != 0)
+    {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_CERT_PARSE, ret, "Failed to parse PEM certificate");
+        oss_print_error(ret);
+        goto error;
+    }
+
+    /* Check that the private key matches the certificate public key. */
+    ret = mbedtls_pk_check_pair(&crt->pk, pkey, mbedtls_ctr_drbg_random, &ctr_drbg);
+    if (ret != 0)
+    {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_X509, EST_ERROR_X509_P12, ret, "PEM private key doesn't match the certificate public key");
+        oss_print_error(ret);
+        goto error;
+    }
+
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+
+    /* Configure auth structure to use Certificate type authentication */
+    auth->type = EST_AUTH_TYPE_CERT;
+    auth->certAuth.certificate = (ESTCertificate_t *)crt;
+    auth->certAuth.privateKey = (ESTPrivKey_t *)pkey;
+
+    LOG_INFO(("PEM key and certificate loaded correctly, mTLS authentication configured\n"))
+    return EST_TRUE;
+
+error:
+    mbedtls_pk_free(pkey);
+    mbedtls_x509_crt_free(crt);
+    free(pkey);
+    free(crt);
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+    return EST_FALSE;
+}
+
 bool_t parse_basicauth(const char *userpassword, ESTAuthData_t *auth, ESTError_t *err) {
     if (userpassword == NULL) {
         LOG_ERROR(("User password is NULL\n"))
@@ -136,6 +275,7 @@ static ESTX509Interface_t x509 = {
  * 
  * @param parse_basicauth Function pointer to the basic authentication parsing function.
  * @param parse_p12 Function pointer to the p12 parsing function.
+ * @param parse_pem Function pointer to the PEM key and certificate parsing function.
  * @param tls Pointer to the EST TLS interface.
  * @param x509 Pointer to the EST X.509 interface.
  * @param get_csr Function pointer to the CSR loading function.
@@ -144,6 +284,7 @@ static ESTX509Interface_t x509 = {
 static RFC7030_Subsystem_Config_t rfcConfig = {
     .parse_basicauth = parse_basicauth,
     .parse_p12 = parse_p12,
+    .parse_pem = parse_pem,
     .tls = &tls,
     .x509 = &x509,
     .get_csr = load_csr

@@ -291,6 +291,24 @@ bool_t tls_init(const char *host_port, const char *host, const ESTAuthData_t *au
         free(nctx);
         return EST_FALSE;
     }
+    /* MbedTLS requires the expected server name to verify the server certificate.
+    Without it the handshake is aborted with
+    MBEDTLS_ERR_SSL_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME. */
+    ret = mbedtls_ssl_set_hostname(nctx->ssl, host);
+    if (ret != 0)
+    {
+        est_error_set_custom(err, ERROR_SUBSYSTEM_TLS, EST_ERROR_TLS_CONNECT, ret, "Failed to init tls, fail to set the expected server name");
+        oss_print_error(ret);
+        mbedtls_ctr_drbg_free(&mbed_ssl_ctr_drbg_);
+        mbedtls_entropy_free(&mbed_ssl_entropy_);
+        mbedtls_net_free(&server_fd_);
+        mbedtls_ssl_free(ssl);
+        mbedtls_ssl_config_free(mbed_ssl_config_);
+        free(mbed_ssl_config_);
+        free(ssl);
+        free(nctx);
+        return EST_FALSE;
+    }
     // Set up the I/O callbacks
     mbedtls_ssl_set_bio(nctx->ssl, &nctx->conn, mbedtls_net_send, mbedtls_net_recv, NULL);
     // Perform the SSL/TLS handshake

@@ -414,6 +414,26 @@ int convert_pem_to_der(const unsigned char *input, size_t ilen,
 bool_t parse_p12(const char *p12, size_t p12_len, const char *password, ESTAuthData_t *auth, ESTError_t *err);
 
 /**
+ * @brief Parses a PEM private key and certificate and extracts authentication data.
+ *
+ * This function takes a PEM private key and a PEM certificate, along with their
+ * lengths, and pointers to `ESTAuthData_t` and `ESTError_t` structures. It parses
+ * both buffers, checks that the key matches the certificate, and stores the mTLS
+ * authentication data in the `ESTAuthData_t` structure. Any errors encountered
+ * during the parsing process are stored in the `ESTError_t` structure.
+ *
+ * @param key The PEM private key data.
+ * @param key_len The length of the PEM private key data.
+ * @param cert The PEM certificate data.
+ * @param cert_len The length of the PEM certificate data.
+ * @param auth Pointer to the `ESTAuthData_t` structure to store the authentication data.
+ * @param err Pointer to the `ESTError_t` structure to store any encountered errors.
+ * @return True if the PEM key and certificate were successfully parsed and authentication
+ *         data was extracted, false otherwise.
+ */
+bool_t parse_pem(const char *key, size_t key_len, const char *cert, size_t cert_len, ESTAuthData_t *auth, ESTError_t *err);
+
+/**
  * @brief a CSR (Certificate Signing Request) from the given context.
  *
  * @param ctx The context to load the CSR from.
